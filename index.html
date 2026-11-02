@@ -1,0 +1,1955 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SRM Calculator</title>
+<style>
+:root[data-theme="dark"]{
+  --bg:#0e1320; --bg2:#0a0f1a; --panel:#161d2c; --panel2:#1d2637; --line:#2b364c;
+  --text:#e7edf7; --muted:#8a97ad; --accent:#4f9dff; --accent2:#ffb020;
+  --wall:#7d8aa3; --wall2:#5b6880; --grain:#e0a35a; --grain2:#b8792f;
+  --nozzle:#5b6b86; --head:#6b7a94; --inhib:#ff6b57;
+  --ok:#3ecf8e; --warn:#ffb020; --err:#ff5d6c; --grid:#26314a;
+  --c1:#4f9dff; --c2:#ff7a59; --c3:#3ecf8e; --c4:#b07cff;
+}
+:root[data-theme="light"]{
+  --bg:#eef2f8; --bg2:#e3e9f2; --panel:#ffffff; --panel2:#f4f7fb; --line:#d5dde9;
+  --text:#16202f; --muted:#5c6b82; --accent:#1f6feb; --accent2:#d98a00;
+  --wall:#9aa8bd; --wall2:#7b8aa1; --grain:#e6b876; --grain2:#c08a3e;
+  --nozzle:#8794aa; --head:#9aa8bd; --inhib:#e2543d;
+  --ok:#1f9d63; --warn:#c07d00; --err:#d83b4b; --grid:#e2e8f1;
+  --c1:#1f6feb; --c2:#e2543d; --c3:#1f9d63; --c4:#8a4fd6;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--text); font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue","Noto Sans",Arial,"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{margin:0;font-weight:650}
+em{font-style:normal}
+.topbar{
+  position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;
+  gap:16px;padding:12px 20px;background:linear-gradient(180deg,var(--panel),var(--bg2));
+  border-bottom:1px solid var(--line);
+}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{
+  width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-weight:800;letter-spacing:.5px;
+  background:linear-gradient(135deg,var(--accent),#7b5cff);color:#fff;box-shadow:0 6px 18px rgba(79,157,255,.35)
+}
+.brand h1{font-size:17px}
+.brand p{margin:1px 0 0;font-size:12px;color:var(--muted)}
+.controls{display:flex;align-items:center;gap:10px}
+select,button,input,textarea{font:inherit;color:inherit}
+.controls select,.btn{
+  background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:7px 10px;cursor:pointer;transition:.15s
+}
+.controls select:hover,.btn:hover{border-color:var(--accent)}
+.btn.primary{background:linear-gradient(135deg,var(--accent),#6f7bff);border-color:transparent;color:#fff;font-weight:600}
+.btn.ghost{background:transparent}
+.btn.danger{color:var(--err);border-color:var(--line)}
+.wrap{display:grid;grid-template-columns:352px minmax(0,1fr);gap:16px;padding:16px;align-items:start}
+@media(max-width:1050px){.wrap{grid-template-columns:1fr}}
+.panel{display:flex;flex-direction:column;gap:10px;position:sticky;top:var(--bar-h,78px);max-height:calc(100vh - var(--bar-h,78px) - 16px);overflow:auto;overflow-x:hidden;scrollbar-width:thin;padding-right:4px}
+.panel>*{flex:0 0 auto}
+.panel.flow{position:static;max-height:none;overflow:visible;padding-right:0}
+@media(max-width:1050px){.panel{position:static;max-height:none;overflow:visible;padding-right:0}}
+details.card{
+  background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden
+}
+details.card>summary{
+  list-style:none;cursor:pointer;padding:11px 14px;font-weight:650;display:flex;align-items:center;gap:8px;
+  background:var(--panel2);user-select:none
+}
+details.card>summary::-webkit-details-marker{display:none}
+details.card>summary::before{content:"▸";color:var(--muted);transition:.15s}
+details.card[open]>summary::before{transform:rotate(90deg)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px}
+.grid1{display:grid;grid-template-columns:1fr;gap:8px}
+.pad{padding:12px 14px}
+.field{display:flex;flex-direction:column;gap:3px;min-width:0}
+.field>span{font-size:11.5px;color:var(--muted)}
+.inp{display:flex;align-items:center;background:var(--bg2);border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.inp:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,157,255,.15)}
+.inp input{flex:1;min-width:0;width:100%;background:transparent;border:0;outline:0;padding:7px 8px}
+.inp em{font-size:11px;color:var(--muted);padding:0 8px;border-left:1px solid var(--line);line-height:26px}
+.inp input[type=number]{-moz-appearance:textfield}
+.checks{display:flex;flex-wrap:wrap;gap:10px 14px}
+.check{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text);cursor:pointer}
+.check input{accent-color:var(--accent);width:15px;height:15px}
+.checkgroup{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:9px}
+.grouplabel{margin:0;font-size:11.5px;font-weight:650;color:var(--muted);letter-spacing:.3px;display:flex;align-items:center;gap:7px}
+.grouplabel::before{content:"";width:8px;height:8px;border-radius:2px;background:var(--inhib)}
+.derived{display:grid;grid-template-columns:1fr auto auto;gap:4px 8px;font-size:12.5px;align-items:baseline}
+.derived span{color:var(--muted)}
+.derived b{font-variant-numeric:tabular-nums}
+.derived em{color:var(--muted);font-size:11px}
+.sep{height:1px;background:var(--line);margin:2px 0}
+.hint{font-size:11.5px;color:var(--muted);margin:6px 0 0}
+main{display:flex;flex-direction:column;gap:16px;min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px}
+.card>h2{font-size:15px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.card>h2::before{content:"";width:4px;height:16px;border-radius:2px;background:var(--accent)}
+.messages{display:flex;flex-direction:column;gap:6px}
+.msg{padding:9px 12px;border-radius:10px;font-size:12.5px;border:1px solid}
+.msg.err{background:rgba(255,93,108,.1);border-color:rgba(255,93,108,.4);color:var(--err)}
+.msg.warn{background:rgba(255,176,32,.1);border-color:rgba(255,176,32,.4);color:var(--warn)}
+.msg.ok{background:rgba(62,207,142,.1);border-color:rgba(62,207,142,.4);color:var(--ok)}
+.schems{display:grid;grid-template-columns:1.25fr 1fr;gap:16px}
+@media(max-width:900px){.schems{grid-template-columns:1fr}}
+figure{margin:0}
+figcaption{font-size:12px;color:var(--muted);margin-bottom:6px;text-align:center}
+.svg-host{width:100%}
+.svg-host svg{width:100%;height:auto;display:block}
+.legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;font-size:11.5px;color:var(--muted)}
+.legend i{width:12px;height:12px;border-radius:3px;display:inline-block;margin-right:5px;vertical-align:-2px}
+.metrics{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px}
+.metric{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.metric span{font-size:11px;color:var(--muted);display:block}
+.metric b{font-size:19px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.2px}
+.metric em{font-size:11px;color:var(--muted);margin-left:5px}
+.metric.hl b{color:var(--accent)}
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:820px){.charts{grid-template-columns:1fr}}
+.chart{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px 10px 4px}
+.chart h3{font-size:12.5px;color:var(--muted);font-weight:600;margin:0 0 4px 6px}
+.chart-host{position:relative}
+.chart-svg{width:100%;height:auto;display:block;overflow:visible}
+.chart .tip{
+  position:absolute;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:8px;
+  padding:6px 9px;font-size:11.5px;box-shadow:0 8px 24px rgba(0,0,0,.35);white-space:nowrap;transform:translate(-50%,-115%);z-index:5
+}
+.chart .tip b{color:var(--accent)}
+.empty{color:var(--muted);text-align:center;padding:40px 0;font-size:12.5px}
+.exports{display:flex;flex-wrap:wrap;gap:10px}
+.filebtn{position:relative;overflow:hidden}
+.filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.cp{display:none;flex-direction:column;gap:8px}
+.cp.show{display:flex}
+.row{display:flex;gap:8px;align-items:flex-end}
+.row .field{flex:1}
+.dimtext{fill:var(--muted);font-size:11px}
+.svgnum{fill:var(--text);font-weight:600}
+svg text{font-family:inherit}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">SRM</div>
+    <div><h1 data-i18n="appTitle"></h1><p data-i18n="appSubtitle"></p></div>
+  </div>
+  <div class="controls">
+    <select id="langSel">
+      <option value="en">English</option>
+      <option value="ru">Русский</option>
+      <option value="zh">中文</option>
+    </select>
+    <button id="themeBtn" class="btn ghost" title="theme">🌙</button>
+  </div>
+</header>
+<div class="wrap">
+  <aside class="panel" id="panel">
+    <details class="card" open>
+      <summary data-i18n="sec_propellant"></summary>
+      <div class="pad grid1">
+        <label class="field"><span data-i18n="f_motorName"></span><span class="inp"><input type="text" id="motorName" value="Demo"></span></label>
+        <label class="field"><span data-i18n="f_manufacturer"></span><span class="inp"><input type="text" id="manufacturer" value="Custom"></span></label>
+        <div class="row">
+          <label class="field"><span data-i18n="f_propellant"></span><span class="inp"><select id="propSelect"></select></span></label>
+          <button class="btn" id="newPropBtn" data-i18n="btn_newPropellant"></button>
+        </div>
+        <p class="hint" id="propComposition"></p>
+        <div class="cp" id="cpEditor">
+          <div class="row">
+            <label class="field"><span data-i18n="cp_name"></span><span class="inp"><input type="text" id="cpName" value="MY-1"></span></label>
+            <button class="btn danger" id="delPropBtn" data-i18n="btn_delete"></button>
+          </div>
+          <div class="grid2">
+            <label class="field"><span data-i18n="f_M"></span><span class="inp"><input type="number" id="cpM" step="0.01" value="42.39"><em>g/mol</em></span></label>
+            <label class="field"><span data-i18n="f_ro"></span><span class="inp"><input type="number" id="cpRo" step="1" value="1879"><em>kg/m³</em></span></label>
+            <label class="field"><span data-i18n="f_k"></span><span class="inp"><input type="number" id="cpK" step="0.0001" value="1.1308"></span></label>
+            <label class="field"><span data-i18n="f_k2ph"></span><span class="inp"><input type="number" id="cpK2ph" step="0.0001" value="1.043"></span></label>
+            <label class="field"><span data-i18n="f_T0"></span><span class="inp"><input type="number" id="cpT0" step="1" value="1710"><em>K</em></span></label>
+            <label class="field"><span data-i18n="f_T"></span><span class="inp"><input type="number" id="cpT" step="1" value="1625"><em>K</em></span></label>
+            <label class="field"><span data-i18n="f_a"></span><span class="inp"><input type="number" id="cpA" step="0.0001" value="5.5"></span></label>
+            <label class="field"><span data-i18n="f_n"></span><span class="inp"><input type="number" id="cpN" step="0.001" value="0.41"></span></label>
+          </div>
+          <div class="derived" id="cpDerived"></div>
+        </div>
+        <div class="derived" id="propDerived"></div>
+      </div>
+    </details>
+
+    <details class="card" open>
+      <summary data-i18n="sec_chamber"></summary>
+      <div class="pad grid2">
+        <label class="field"><span data-i18n="f_chamberDia"></span><span class="inp"><input type="number" id="chamberDia" step="0.1" min="0.1" value="55"><em>mm</em></span></label>
+        <label class="field"><span data-i18n="f_chamberLen"></span><span class="inp"><input type="number" id="chamberLen" step="0.1" min="0.1" value="220"><em>mm</em></span></label>
+        <label class="field"><span data-i18n="f_wallThk"></span><span class="inp"><input type="number" id="wallThk" step="0.1" min="0" value="3"><em>mm</em></span></label>
+        <label class="field"><span data-i18n="f_wallDensity"></span><span class="inp"><input type="number" id="wallDensity" step="1" min="0" value="2700"><em>kg/m³</em></span></label>
+        <label class="field"><span data-i18n="f_headMass"></span><span class="inp"><input type="number" id="headMass" step="1" min="0" value="100"><em>g</em></span></label>
+        <label class="field"><span data-i18n="f_headLen"></span><span class="inp"><input type="number" id="headLen" step="0.5" min="0" value="30"><em>mm</em></span></label>
+        <label class="field"><span data-i18n="f_nozzleLen"></span><span class="inp"><input type="number" id="nozzleLen" step="0.5" min="0" value="50"><em>mm</em></span></label>
+        <div></div>
+        <div class="derived" id="chamberDerived" style="grid-column:1/-1"></div>
+      </div>
+    </details>
+
+    <details class="card" open>
+      <summary data-i18n="sec_grain"></summary>
+      <div class="pad grid2">
+        <label class="field"><span data-i18n="f_grainDia"></span><span class="inp"><input type="number" id="grainDia" step="0.1" min="0.1" value="50"><em>mm</em></span></label>
+        <label class="field"><span data-i18n="f_grainLen"></span><span class="inp"><input type="number" id="grainLen" step="0.1" min="0.1" value="200"><em>mm</em></span></label>
+        <label class="field"><span data-i18n="f_coreDia"></span><span class="inp"><input type="number" id="coreDia" step="0.1" min="0" value="20"><em>mm</em></span></label>
+        <label class="field"><span data-i18n="f_densityRatio"></span><span class="inp"><input type="number" id="densityRatio" step="0.01" min="0" max="1" value="0.95"></span></label>
+        <label class="field"><span data-i18n="f_segments"></span><span class="inp"><input type="number" id="segments" step="1" min="1" value="1"></span></label>
+        <div></div>
+        <div class="checkgroup" style="grid-column:1/-1">
+          <p class="grouplabel" data-i18n="ins_group"></p>
+          <div class="checks">
+            <label class="check"><input type="checkbox" id="insOuter" checked><span data-i18n="ins_outer"></span></label>
+            <label class="check"><input type="checkbox" id="insFaces"><span data-i18n="ins_faces"></span></label>
+            <label class="check"><input type="checkbox" id="insCore"><span data-i18n="ins_core"></span></label>
+          </div>
+          <p class="hint" data-i18n="ins_hint"></p>
+        </div>
+        <div class="derived" id="grainDerived" style="grid-column:1/-1"></div>
+      </div>
+    </details>
+
+    <details class="card" open>
+      <summary data-i18n="sec_nozzle"></summary>
+      <div class="pad grid2">
+        <label class="field"><span data-i18n="f_throatDia"></span><span class="inp"><input type="number" id="throatDia" step="0.1" min="0.1" value="10"><em>mm</em></span></label>
+        <label class="field"><span data-i18n="f_exhaustDia"></span><span class="inp"><input type="number" id="exhaustDia" step="0.1" min="0.1" value="25"><em>mm</em></span></label>
+        <label class="field"><span data-i18n="f_eta"></span><span class="inp"><input type="number" id="eta" step="0.01" min="0" max="1" value="0.85"></span></label>
+        <label class="field"><span data-i18n="f_erosion"></span><span class="inp"><input type="number" id="erosion" step="0.1" min="0" value="0"><em>mm</em></span></label>
+        <label class="field"><span data-i18n="f_nozzleMass"></span><span class="inp"><input type="number" id="nozzleMass" step="1" min="0" value="50"><em>g</em></span></label>
+        <div></div>
+        <div class="derived" id="nozzleDerived" style="grid-column:1/-1"></div>
+      </div>
+    </details>
+
+    <details class="card" open>
+      <summary data-i18n="sec_sim"></summary>
+      <div class="pad grid2">
+        <label class="field"><span data-i18n="f_step"></span><span class="inp"><input type="number" id="step" step="0.0005" min="0.0001" value="0.001"><em>s</em></span></label>
+        <label class="field"><span data-i18n="f_maxTime"></span><span class="inp"><input type="number" id="maxTime" step="1" min="0.1" value="60"><em>s</em></span></label>
+        <div style="grid-column:1/-1"><button class="btn primary" id="computeBtn" data-i18n="btn_compute" style="width:100%"></button></div>
+      </div>
+    </details>
+  </aside>
+
+  <main>
+    <div class="messages" id="messages"></div>
+
+    <section class="card">
+      <h2 data-i18n="sec_schematic"></h2>
+      <div class="schems">
+        <figure><figcaption data-i18n="sec_longitudinal"></figcaption><div class="svg-host" id="svgLong"></div></figure>
+        <figure><figcaption data-i18n="sec_cross"></figcaption><div class="svg-host" id="svgCross"></div></figure>
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--wall)"></i><span data-i18n="leg_wall"></span></span>
+        <span><i style="background:var(--grain)"></i><span data-i18n="leg_grain"></span></span>
+        <span><i style="background:var(--bg2);border:1px solid var(--line)"></i><span data-i18n="leg_channel"></span></span>
+        <span><i style="background:var(--nozzle)"></i><span data-i18n="leg_nozzle"></span></span>
+        <span><i style="background:var(--inhib)"></i><span data-i18n="leg_inhibited"></span></span>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 data-i18n="sec_results"></h2>
+      <div class="metrics" id="metrics"></div>
+    </section>
+
+    <section class="card">
+      <h2 data-i18n="sec_charts"></h2>
+      <div class="charts" id="charts"></div>
+    </section>
+
+    <section class="card">
+      <h2 data-i18n="sec_export"></h2>
+      <div class="exports">
+        <button class="btn" id="btnEng" data-i18n="e_eng"></button>
+        <button class="btn" id="btnRse" data-i18n="e_rse"></button>
+        <button class="btn" id="btnCsv" data-i18n="e_csv"></button>
+        <button class="btn" id="btnJson" data-i18n="e_json"></button>
+        <button class="btn" id="btnSave" data-i18n="e_save"></button>
+        <label class="btn filebtn"><span data-i18n="e_load"></span><input type="file" id="fileLoad" accept=".json,application/json"></label>
+        <button class="btn danger" id="btnReset" data-i18n="e_reset"></button>
+      </div>
+      <p class="hint" data-i18n="e_hint"></p>
+    </section>
+  </main>
+</div>
+<script>
+(function(){
+'use strict';
+
+/* ==== SRM CORE MODEL BEGIN ==== */
+globalThis.SrmCore = (function(){
+  const CONST = { R: 8314.0, Patm: 101325.0, g: 9.80665 };
+
+  const STANDARD_PROPELLANTS = {
+    KNDX:   { name:'KNDX',   M:42.39, k:1.1308, k2ph:1.043, T0:1710, T:1625, ro:1879, a:5.5,    n:0.41  },
+    KNSO:   { name:'KNSO',   M:39.9,  k:1.1361, k2ph:1.042, T0:1600, T:1520, ro:1841, a:5.132,  n:0.322 },
+    KNSU:   { name:'KNSU',   M:41.98, k:1.133,  k2ph:1.044, T0:1720, T:1634, ro:1889, a:8.2635, n:0.319 },
+    ANSIAL: { name:'ANSIAL', M:26.99, k:1.1548, k2ph:1.047, T0:2777, T:2692, ro:1608, a:3.7288, n:0.338 }
+  };
+
+  function makePropellant(p){
+    const M=+p.M, k=+p.k, k2ph=+p.k2ph, T0=+p.T0, T=+p.T, ro=+p.ro, a=+p.a, n=+p.n;
+    const R = CONST.R / M;
+    const cstar = Math.sqrt((R*T/k) * Math.pow((k+1)/2, (k+1)/(k-1)));
+    const be = T / T0;
+    return {
+      name: p.name, M, k, k2ph, T0, T, ro, a, n, R, cstar, be,
+      burnRate: function(pr){ return a * Math.pow(pr/1e6, n) / 1000.0; }
+    };
+  }
+
+  function makeGrain(o){
+    const g = {
+      propellant: o.propellant,
+      densityRatio: +o.densityRatio,
+      insulation: { outer: !!o.insulation.outer, faces: !!o.insulation.faces, core: !!o.insulation.core },
+      initialDiameter: +o.diameter,
+      initialLength: +o.length,
+      initialCoreDiameter: +o.coreDiameter
+    };
+    g.density = g.propellant.ro * g.densityRatio;
+    g.calcVolume = function(){ return Math.PI * (this.diameter*this.diameter - this.coreDiameter*this.coreDiameter) * this.length / 4.0; };
+    g.reset = function(){
+      this.diameter = this.initialDiameter;
+      this.length = this.initialLength;
+      this.coreDiameter = this.initialCoreDiameter;
+      this.burnArea = 0.0;
+      this.volume = this.calcVolume();
+      if (this.volume < 0.0) this.volume = 0.0;
+      this.initialVolume = this.volume;
+      this.initialMass = this.mass = this.volume * this.density;
+    };
+    g.isBurned = function(){ return this.volume <= 1e-12; };
+    g.progress = function(){ return this.initialVolume > 0 ? 1.0 - this.volume/this.initialVolume : 1.0; };
+    g.pressure = function(Kn){
+      const p = Math.pow(Kn*this.propellant.a*this.density/1000.0*this.propellant.cstar/1e6, 1.0/(1.0-this.propellant.n)) * 1e6;
+      return p > CONST.Patm ? p : CONST.Patm;
+    };
+    g.burn = function(pressure, step){
+      if (this.isBurned()){ this.burnArea = 0.0; return; }
+      const d2 = this.propellant.burnRate(pressure) * step * 2.0;
+      if (!this.insulation.faces) this.length = Math.max(0, this.length - d2);
+      if (!this.insulation.core && this.initialCoreDiameter > 0)  this.coreDiameter += d2;
+      if (!this.insulation.outer) this.diameter = Math.max(this.coreDiameter, this.diameter - d2);
+      let area = 0.0;
+      if (!this.insulation.core && this.initialCoreDiameter > 0) area += Math.PI * this.coreDiameter * this.length;
+      if (!this.insulation.outer) area += Math.PI * this.diameter * this.length;
+      if (!this.insulation.faces) area += Math.PI * (this.diameter*this.diameter - this.coreDiameter*this.coreDiameter) / 2.0;
+      this.burnArea = area;
+      this.volume = this.calcVolume();
+      this.mass = this.volume * this.density;
+    };
+    g.reset();
+    return g;
+  }
+
+  function makeNozzle(o){
+    const z = {
+      initialThroatDiameter: +o.throatDiameter,
+      initialExhaustDiameter: +o.exhaustDiameter,
+      eta: +o.eta, erosion: +o.erosion, mass: +o.mass
+    };
+    z.calc = function(){
+      this.throatArea = Math.PI * this.throatDiameter*this.throatDiameter / 4.0;
+      this.exhaustArea = Math.PI * this.exhaustDiameter*this.exhaustDiameter / 4.0;
+      this.expansion = this.exhaustArea / this.throatArea;
+    };
+    z.reset = function(){
+      this.throatDiameter = this.initialThroatDiameter;
+      this.exhaustDiameter = this.initialExhaustDiameter;
+      this.mah = 0.0; this.exhaustPressure = CONST.Patm;
+      this.calc(); this.initialThroatArea = this.throatArea;
+    };
+    z.burn = function(progress){
+      if (progress >= 1.0) return;
+      this.throatDiameter = this.initialThroatDiameter + this.erosion * progress;
+      this.calc();
+    };
+    z.mahPressure = function(prop, pc){
+      const k = prop.k2ph;
+      const ratio = this.exhaustArea / this.throatArea;
+      const aa = function(m){ return Math.pow((2.0 + (k-1.0)*m*m)/(k+1.0), (k+1.0)/(2.0*(k-1.0)))/m; };
+      let m = 1.01, guard = 0;
+      while (ratio - aa(m) > 0.01 && guard++ < 50000) m += 0.01;
+      this.mah = m;
+      let pe = pc / Math.pow(1.0 + (k-1.0)/2.0*m*m, k/(k-1.0));
+      this.exhaustPressure = pe > CONST.Patm ? pe : CONST.Patm;
+    };
+    z.reset();
+    return z;
+  }
+
+  function makeMotor(o){
+    const m = {
+      title: o.title, author: o.author,
+      diameter: +o.diameter, length: +o.length, totalLength: +o.totalLength,
+      thickness: +o.thickness, density: +o.density, headMass: +o.headMass,
+      nozzle: o.nozzle, grains: o.grains.slice(),
+      volume: Math.PI * (+o.diameter)*(+o.diameter) * (+o.length) / 4.0
+    };
+    m.propellant = m.grains[0].propellant;
+    m.reset = function(){
+      this.Kn = 0.0; this.mah = 0.0; this.thrust = 0.0; this.pressure = CONST.Patm;
+      this.burnArea = 0.0; this._burnOverPressure = null; this._burnOverTime = null;
+      for (const g of this.grains) g.reset();
+      this.nozzle.reset();
+    };
+    m.outerDiameter = function(){ return this.diameter + this.thickness*2.0; };
+    m.chamberMass = function(){ return (Math.PI/4.0)*(this.outerDiameter()**2 - this.diameter**2)*this.length*this.density; };
+    m.propellantMass = function(){ return this.grains.reduce((s,g)=>s+g.mass,0); };
+    m.propellantInitialMass = function(){ return this.grains.reduce((s,g)=>s+g.initialMass,0); };
+    m.propellantVolume = function(){ return this.grains.reduce((s,g)=>s+g.volume,0); };
+    m.initialMass = function(){ return this.nozzle.mass + this.headMass + this.chamberMass() + this.propellantInitialMass(); };
+    m.mass = function(){ return this.nozzle.mass + this.headMass + this.chamberMass() + this.propellantMass(); };
+    m.isBurned = function(){ for (const g of this.grains) if (!g.isBurned()) return false; return true; };
+    m.progress = function(){ return this.grains[0].progress(); };
+    m.step = function(time, step){
+      this.burnArea = 0.0;
+      for (const g of this.grains){ g.burn(this.pressure, step); this.burnArea += g.burnArea; }
+      this.nozzle.burn(this.progress());
+      this.Kn = this.burnArea / this.nozzle.throatArea;
+      if (!this.isBurned()){
+        let sum = 0.0;
+        for (const g of this.grains) sum += g.pressure(this.Kn);
+        this.pressure = sum / this.grains.length;
+      } else {
+        if (this._burnOverPressure === null){ this._burnOverPressure = this.pressure; this._burnOverTime = time; }
+        const tau = this.volume*this.propellant.cstar/(this.propellant.R*this.propellant.T*this.nozzle.throatArea);
+        this.pressure = this._burnOverPressure * Math.exp(-(time-this._burnOverTime)/tau);
+        if (this.pressure < CONST.Patm) this.pressure = CONST.Patm;
+      }
+      this.nozzle.mahPressure(this.propellant, this.pressure);
+      const k = this.propellant.k2ph;
+      const cf = this.nozzle.eta * Math.sqrt(
+        (2.0*k*k/(k-1.0)) * Math.pow(2.0/(k+1.0), (k+1.0)/(k-1.0))
+        * (1.0 - Math.pow(this.nozzle.exhaustPressure/this.pressure, (k-1.0)/k))
+      ) + (this.nozzle.exhaustPressure - CONST.Patm) * this.nozzle.exhaustArea / this.pressure / this.nozzle.throatArea;
+      this.thrust = cf * this.pressure * this.nozzle.throatArea;
+    };
+    m.reset();
+    return m;
+  }
+
+  const CLASS_DEF = [2.5,5,10,20,40,80,160,320,640,1280,2560,5120,10240,20480,40960];
+
+  function motorClass(totalImpulse, avgThrust, i18nText){
+    for (let i=0;i<CLASS_DEF.length;i++){
+      if (totalImpulse <= CLASS_DEF[i]) return { letter: String.fromCharCode(65+i), text: String.fromCharCode(65+i) + ' ' + Math.round(avgThrust) };
+    }
+    return { letter:'', text: '' };
+  }
+
+  function simulate(motor, opt){
+    const step = opt.step, offset = opt.offset || 0.0, maxTime = opt.maxTime;
+    motor.reset();
+    const times=[], pressures=[], thrusts=[], kns=[], throatAreas=[], propVolumes=[];
+    const propMass = motor.propellantMass();
+    let totalImpulse = 0.0, prevThrust = 0.0, time = offset, burnTime = 0.0, exceeded = false;
+    while (time < offset + maxTime){
+      motor.step(time, step);
+      times.push(time); pressures.push(motor.pressure); thrusts.push(motor.thrust);
+      kns.push(motor.Kn); throatAreas.push(motor.nozzle.throatArea); propVolumes.push(motor.propellantVolume());
+      totalImpulse += (prevThrust + motor.thrust) / 2.0 * step;
+      prevThrust = motor.thrust;
+      if (!burnTime && motor.isBurned()) burnTime = time - offset;
+      if (motor.isBurned() && motor.pressure < 1.02*CONST.Patm) break;
+      time += step;
+      if (time >= offset + maxTime){ exceeded = true; break; }
+    }
+    if (exceeded) return { ok:false, error:'timeout' };
+    const n = thrusts.length;
+    const avg = a => a.reduce((s,v)=>s+v,0)/a.length;
+    const maxThrust = Math.max.apply(null, thrusts);
+    const maxPressure = Math.max.apply(null, pressures);
+    const maxKn = Math.max.apply(null, kns);
+    const summary = {
+      maxThrust, maxPressure, maxKn,
+      avgThrust: avg(thrusts), avgKn: avg(kns),
+      totalImpulse, burnTime, totalTime: time,
+      specificImpulse: totalImpulse / CONST.g / propMass,
+      propellantMass: propMass,
+      propellantVolume: motor.propellantVolume(),
+      initialMass: motor.initialMass(), finalMass: motor.mass(),
+      throatArea: motor.nozzle.throatArea,
+      initialThroatArea: motor.nozzle.initialThroatArea,
+      expansion: motor.nozzle.expansion
+    };
+    const mc = motorClass(totalImpulse, summary.avgThrust);
+    summary.motorClass = mc.text; summary.classLetter = mc.letter;
+    return { ok:true, motor, times, pressures, thrusts, kns, throatAreas, propVolumes, summary };
+  }
+
+  function decimateIdx(n, maxPoints, forceIndex){
+    if (n <= maxPoints){
+      const out = [];
+      for (let i=0;i<n;i++) out.push(i);
+      if (forceIndex != null && forceIndex >= 0 && forceIndex < n) return out;
+      return out;
+    }
+    const set = new Set();
+    const stride = (n-1)/(maxPoints-1);
+    for (let k=0;k<maxPoints;k++) set.add(Math.round(k*stride));
+    set.add(n-1); set.add(0);
+    if (forceIndex != null && forceIndex >= 0 && forceIndex < n) set.add(forceIndex);
+    return Array.from(set).sort((a,b)=>a-b);
+  }
+
+  return { CONST, STANDARD_PROPELLANTS, makePropellant, makeGrain, makeNozzle, makeMotor, simulate, decimateIdx, CLASS_DEF };
+})();
+/* ==== SRM CORE MODEL END ==== */
+
+/* ==================================================================
+   APP: i18n
+   ================================================================== */
+const I18N = {
+en: {
+  appTitle:'SRM Calculator',
+  appSubtitle:'Solid rocket motor design & simulation',
+  sec_propellant:'Propellant & motor',
+  sec_chamber:'Combustion chamber',
+  sec_grain:'Propellant grain',
+  sec_nozzle:'Nozzle',
+  sec_sim:'Simulation',
+  sec_schematic:'Schematic',
+  sec_longitudinal:'Longitudinal section',
+  sec_cross:'Cross-section',
+  sec_results:'Results',
+  sec_charts:'Charts',
+  sec_export:'Export & project',
+  f_motorName:'Motor name',
+  f_manufacturer:'Manufacturer',
+  f_propellant:'Propellant',
+  f_M:'Molar mass M',
+  f_ro:'Density \u03c1',
+  f_k:'Adiabatic index k',
+  f_k2ph:'Two-phase k\u2082',
+  f_T0:'Theoretical T\u2080',
+  f_T:'Effective T',
+  f_a:'Burn-rate coeff. a',
+  f_n:'Burn-rate exponent n',
+  f_chamberDia:'Chamber bore \u00d8',
+  f_chamberLen:'Chamber length',
+  f_wallThk:'Wall thickness',
+  f_wallDensity:'Wall density',
+  f_headMass:'Forward closure mass',
+  f_headLen:'Forward closure length',
+  f_nozzleLen:'Nozzle length',
+  f_grainDia:'Grain \u00d8',
+  f_grainLen:'Grain length',
+  f_coreDia:'Core \u00d8',
+  f_densityRatio:'Fill ratio',
+  f_segments:'Grains',
+  f_throatDia:'Throat \u00d8',
+  f_exhaustDia:'Exit \u00d8',
+  f_eta:'Efficiency \u03b7',
+  f_erosion:'Throat erosion',
+  f_nozzleMass:'Nozzle mass',
+  f_step:'Time step',
+  f_maxTime:'Time limit',
+  cp_name:'Custom propellant name',
+  ins_group:'Grain inhibition',
+  ins_hint:'Checked surfaces are inhibited and do not burn.',
+  ins_outer:'Outer surface',
+  ins_faces:'Faces',
+  ins_core:'Core channel',
+  btn_newPropellant:'\uff0b New',
+  btn_delete:'Delete',
+  btn_compute:'Compute',
+  leg_wall:'Casing',
+  leg_grain:'Propellant',
+  leg_channel:'Channel',
+  leg_nozzle:'Nozzle',
+  leg_inhibited:'Inhibited surface',
+  e_eng:'RASP .eng',
+  e_rse:'RockSim .rse',
+  e_csv:'Data .csv',
+  e_json:'Project .json',
+  e_save:'Save',
+  e_load:'Load',
+  e_reset:'Reset',
+  e_hint:'RASP (.eng) and RockSim (.rse) files can be imported straight into OpenRocket: Edit \u2192 Preferences \u2192 Motors, or Import in the motor-selection dialog.',
+  d_outerDia:'Outer \u00d8',
+  d_totalLen:'Overall length',
+  d_chamberVol:'Chamber volume',
+  d_chamberMass:'Casing mass',
+  d_grainVol:'Grain volume',
+  d_grainMass:'Propellant mass',
+  d_dens:'Effective density',
+  d_cstar:'c* (characteristic velocity)',
+  d_R:'Gas constant R',
+  d_be:'Combustion efficiency',
+  d_throatArea:'Throat area',
+  d_exhaustArea:'Exit area',
+  d_expansion:'Expansion ratio',
+  d_grainSumLen:'Total grain length',
+  d_fill:'Chamber fill',
+  d_totalMass:'Liftoff mass',
+  r_class:'Motor class',
+  r_totalImpulse:'Total impulse',
+  r_maxThrust:'Peak thrust',
+  r_avgThrust:'Average thrust',
+  r_maxPressure:'Peak pressure',
+  r_burnTime:'Burn time',
+  r_isp:'Specific impulse',
+  r_maxKn:'Peak Kn',
+  r_avgKn:'Average Kn',
+  r_propMass:'Propellant mass',
+  r_initialMass:'Liftoff mass',
+  r_finalMass:'Burnout mass',
+  r_totalTime:'Total time',
+  r_expansion:'Expansion ratio',
+  r_throatDia:'Final throat \u00d8',
+  c_thrust:'Thrust F(t)',
+  c_pressure:'Chamber pressure p(t)',
+  c_kn:'Kn(t)',
+  c_mass:'Mass & burn progress',
+  ax_t:'Time',
+  ax_thrust:'Thrust, N',
+  ax_pressure:'Pressure, bar',
+  ax_kn:'Kn',
+  ax_mass:'Mass, kg',
+  ax_progress:'Burn progress',
+  ax_total:'Overall length',
+  ax_chamber:'Chamber',
+  ax_grain:'Grain',
+  ax_nozzle:'Nozzle',
+  ax_head:'Head',
+  ax_throat:'Throat \u00d8',
+  ax_exhaust:'Exit \u00d8',
+  ax_core:'Core \u00d8',
+  ax_wall:'Wall',
+  ax_grainDia:'Grain \u00d8',
+  ax_outer:'Outer \u00d8',
+  ax_chamberDia:'Chamber \u00d8',
+  ax_seg:'grain',
+  msg_ok:'Calculation completed successfully.',
+  warn_density:'Unusual fill ratio (0.5\u20131.0 expected).',
+  err_generic:'Cannot compute: ',
+  err_prop:'Invalid propellant parameters.',
+  err_chamberDia:'Chamber diameter must be greater than 0.',
+  err_chamberLen:'Chamber length must be greater than 0.',
+  err_grainDia:'Grain diameter must be greater than 0.',
+  err_grainLen:'Grain length must be greater than 0.',
+  err_coreNeg:'Core diameter cannot be negative.',
+  err_coreBig:'Core diameter must be smaller than grain diameter.',
+  err_tooBigGrain:'Grain does not fit the chamber (grain \u00d8 \u2265 chamber \u00d8).',
+  err_noFit:'Propellant does not fit in the chamber (total grain length > chamber length).',
+  err_chamberBig:'Chamber is too big (chamber length > 2\u00d7 total grain length).',
+  err_throat:'Throat diameter must not exceed exit diameter.',
+  err_eta:'Nozzle efficiency must be greater than 0.',
+  err_exhaust:'Exit diameter must be greater than 0.',
+  err_timeout:'Burn time exceeds the time limit \u2014 check parameters.',
+  err_segments:'Number of grains must be at least 1.',
+  err_noBurnSurface:'All grain surfaces are inhibited \u2014 the grain has no burning surface and cannot burn.'
+},
+ru: {
+  appTitle:'\u0420\u0430\u0441\u0447\u0451\u0442 \u0420\u0414\u0422\u0422',
+  appSubtitle:'\u041f\u0440\u043e\u0435\u043a\u0442\u0438\u0440\u043e\u0432\u0430\u043d\u0438\u0435 \u0438 \u043c\u043e\u0434\u0435\u043b\u0438\u0440\u043e\u0432\u0430\u043d\u0438\u0435 \u0440\u0430\u043a\u0435\u0442\u043d\u043e\u0433\u043e \u0434\u0432\u0438\u0433\u0430\u0442\u0435\u043b\u044f \u0442\u0432\u0451\u0440\u0434\u043e\u0433\u043e \u0442\u043e\u043f\u043b\u0438\u0432\u0430',
+  sec_propellant:'\u0422\u043e\u043f\u043b\u0438\u0432\u043e \u0438 \u0434\u0432\u0438\u0433\u0430\u0442\u0435\u043b\u044c',
+  sec_chamber:'\u041a\u0430\u043c\u0435\u0440\u0430 \u0441\u0433\u043e\u0440\u0430\u043d\u0438\u044f',
+  sec_grain:'\u0422\u043e\u043f\u043b\u0438\u0432\u043d\u0430\u044f \u0448\u0430\u0448\u043a\u0430',
+  sec_nozzle:'\u0421\u043e\u043f\u043b\u043e',
+  sec_sim:'\u041c\u043e\u0434\u0435\u043b\u0438\u0440\u043e\u0432\u0430\u043d\u0438\u0435',
+  sec_schematic:'\u0421\u0445\u0435\u043c\u0430',
+  sec_longitudinal:'\u041f\u0440\u043e\u0434\u043e\u043b\u044c\u043d\u044b\u0439 \u0440\u0430\u0437\u0440\u0435\u0437',
+  sec_cross:'\u041f\u043e\u043f\u0435\u0440\u0435\u0447\u043d\u043e\u0435 \u0441\u0435\u0447\u0435\u043d\u0438\u0435',
+  sec_results:'\u0420\u0435\u0437\u0443\u043b\u044c\u0442\u0430\u0442\u044b',
+  sec_charts:'\u0413\u0440\u0430\u0444\u0438\u043a\u0438',
+  sec_export:'\u042d\u043a\u0441\u043f\u043e\u0440\u0442 \u0438 \u043f\u0440\u043e\u0435\u043a\u0442',
+  f_motorName:'\u041d\u0430\u0437\u0432\u0430\u043d\u0438\u0435 \u0434\u0432\u0438\u0433\u0430\u0442\u0435\u043b\u044f',
+  f_manufacturer:'\u041f\u0440\u043e\u0438\u0437\u0432\u043e\u0434\u0438\u0442\u0435\u043b\u044c',
+  f_propellant:'\u0422\u043e\u043f\u043b\u0438\u0432\u043e',
+  f_M:'\u041c\u043e\u043b\u044f\u0440\u043d\u0430\u044f \u043c\u0430\u0441\u0441\u0430 M',
+  f_ro:'\u041f\u043b\u043e\u0442\u043d\u043e\u0441\u0442\u044c \u03c1',
+  f_k:'\u041f\u043e\u043a\u0430\u0437\u0430\u0442\u0435\u043b\u044c \u0430\u0434\u0438\u0430\u0431\u0430\u0442\u044b k',
+  f_k2ph:'\u0414\u0432\u0443\u0445\u0444\u0430\u0437\u043d\u044b\u0439 k\u2082',
+  f_T0:'\u0422\u0435\u043e\u0440\u0435\u0442\u0438\u0447\u0435\u0441\u043a\u0430\u044f T\u2080',
+  f_T:'\u042d\u0444\u0444\u0435\u043a\u0442\u0438\u0432\u043d\u0430\u044f T',
+  f_a:'\u041a\u043e\u044d\u0444. \u0441\u043a\u043e\u0440\u043e\u0441\u0442\u0438 \u0433\u043e\u0440\u0435\u043d\u0438\u044f a',
+  f_n:'\u041f\u043e\u043a\u0430\u0437\u0430\u0442\u0435\u043b\u044c n',
+  f_chamberDia:'\u0412\u043d\u0443\u0442\u0440\u0435\u043d\u043d\u0438\u0439 \u00d8 \u043a\u0430\u043c\u0435\u0440\u044b',
+  f_chamberLen:'\u0414\u043b\u0438\u043d\u0430 \u043a\u0430\u043c\u0435\u0440\u044b',
+  f_wallThk:'\u0422\u043e\u043b\u0449\u0438\u043d\u0430 \u0441\u0442\u0435\u043d\u043a\u0438',
+  f_wallDensity:'\u041f\u043b\u043e\u0442\u043d\u043e\u0441\u0442\u044c \u0441\u0442\u0435\u043d\u043a\u0438',
+  f_headMass:'\u041c\u0430\u0441\u0441\u0430 \u043f\u0435\u0440\u0435\u0434\u043d\u0435\u0439 \u0437\u0430\u0433\u043b\u0443\u0448\u043a\u0438',
+  f_headLen:'\u0414\u043b\u0438\u043d\u0430 \u043f\u0435\u0440\u0435\u0434\u043d\u0435\u0439 \u0437\u0430\u0433\u043b\u0443\u0448\u043a\u0438',
+  f_nozzleLen:'\u0414\u043b\u0438\u043d\u0430 \u0441\u043e\u043f\u043b\u0430',
+  f_grainDia:'\u00d8 \u0448\u0430\u0448\u043a\u0438',
+  f_grainLen:'\u0414\u043b\u0438\u043d\u0430 \u0448\u0430\u0448\u043a\u0438',
+  f_coreDia:'\u00d8 \u043a\u0430\u043d\u0430\u043b\u0430',
+  f_densityRatio:'\u041a\u043e\u044d\u0444. \u0437\u0430\u043f\u043e\u043b\u043d\u0435\u043d\u0438\u044f',
+  f_segments:'\u0427\u0438\u0441\u043b\u043e \u0448\u0430\u0448\u0435\u043a',
+  f_throatDia:'\u00d8 \u043a\u0440\u0438\u0442\u0438\u0447\u0435\u0441\u043a\u043e\u0433\u043e \u0441\u0435\u0447\u0435\u043d\u0438\u044f',
+  f_exhaustDia:'\u00d8 \u0432\u044b\u0445\u043e\u0434\u043d\u043e\u0433\u043e \u0441\u0435\u0447\u0435\u043d\u0438\u044f',
+  f_eta:'\u041a\u041f\u0414 \u0441\u043e\u043f\u043b\u0430 \u03b7',
+  f_erosion:'\u042d\u0440\u043e\u0437\u0438\u044f \u0433\u043e\u0440\u043b\u043e\u0432\u0438\u043d\u044b',
+  f_nozzleMass:'\u041c\u0430\u0441\u0441\u0430 \u0441\u043e\u043f\u043b\u0430',
+  f_step:'\u0428\u0430\u0433 \u043f\u043e \u0432\u0440\u0435\u043c\u0435\u043d\u0438',
+  f_maxTime:'\u041b\u0438\u043c\u0438\u0442 \u0432\u0440\u0435\u043c\u0435\u043d\u0438',
+  cp_name:'\u041d\u0430\u0437\u0432\u0430\u043d\u0438\u0435 \u043d\u043e\u0432\u043e\u0433\u043e \u0442\u043e\u043f\u043b\u0438\u0432\u0430',
+  ins_group:'\u0411\u0440\u043e\u043d\u0438\u0440\u043e\u0432\u0430\u043d\u0438\u0435 \u0448\u0430\u0448\u043a\u0438',
+  ins_hint:'\u041e\u0442\u043c\u0435\u0447\u0435\u043d\u043d\u044b\u0435 \u043f\u043e\u0432\u0435\u0440\u0445\u043d\u043e\u0441\u0442\u0438 \u0437\u0430\u0431\u0440\u043e\u043d\u0438\u0440\u043e\u0432\u0430\u043d\u044b \u0438 \u043d\u0435 \u0433\u043e\u0440\u044f\u0442.',
+  ins_outer:'\u0412\u043d\u0435\u0448\u043d\u044f\u044f \u043f\u043e\u0432\u0435\u0440\u0445\u043d\u043e\u0441\u0442\u044c',
+  ins_faces:'\u0422\u043e\u0440\u0446\u044b',
+  ins_core:'\u0412\u043d\u0443\u0442\u0440\u0435\u043d\u043d\u0438\u0439 \u043a\u0430\u043d\u0430\u043b',
+  btn_newPropellant:'\uff0b \u041d\u043e\u0432\u043e\u0435',
+  btn_delete:'\u0423\u0434\u0430\u043b\u0438\u0442\u044c',
+  btn_compute:'\u0420\u0430\u0441\u0441\u0447\u0438\u0442\u0430\u0442\u044c',
+  leg_wall:'\u041a\u043e\u0440\u043f\u0443\u0441',
+  leg_grain:'\u0422\u043e\u043f\u043b\u0438\u0432\u043e',
+  leg_channel:'\u041a\u0430\u043d\u0430\u043b',
+  leg_nozzle:'\u0421\u043e\u043f\u043b\u043e',
+  leg_inhibited:'\u0411\u0440\u043e\u043d\u0438\u0440\u043e\u0432\u0430\u043d\u043d\u0430\u044f \u043f\u043e\u0432\u0435\u0440\u0445\u043d\u043e\u0441\u0442\u044c',
+  e_eng:'RASP .eng',
+  e_rse:'RockSim .rse',
+  e_csv:'\u0414\u0430\u043d\u043d\u044b\u0435 .csv',
+  e_json:'\u041f\u0440\u043e\u0435\u043a\u0442 .json',
+  e_save:'\u0421\u043e\u0445\u0440\u0430\u043d\u0438\u0442\u044c',
+  e_load:'\u0417\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044c',
+  e_reset:'\u0421\u0431\u0440\u043e\u0441',
+  e_hint:'\u0424\u0430\u0439\u043b\u044b RASP (.eng) \u0438 RockSim (.rse) \u0438\u043c\u043f\u043e\u0440\u0442\u0438\u0440\u0443\u044e\u0442\u0441\u044f \u0432 OpenRocket \u043d\u0430\u043f\u0440\u044f\u043c\u0443\u044e: \u041f\u0440\u0430\u0432\u043a\u0430 \u2192 \u041d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0438 \u2192 \u0414\u0432\u0438\u0433\u0430\u0442\u0435\u043b\u0438 \u043b\u0438\u0431\u043e \u0418\u043c\u043f\u043e\u0440\u0442 \u0432 \u0434\u0438\u0430\u043b\u043e\u0433\u0435 \u0432\u044b\u0431\u043e\u0440\u0430 \u0434\u0432\u0438\u0433\u0430\u0442\u0435\u043b\u044f.',
+  d_outerDia:'\u041d\u0430\u0440\u0443\u0436\u043d\u044b\u0439 \u00d8',
+  d_totalLen:'\u041f\u043e\u043b\u043d\u0430\u044f \u0434\u043b\u0438\u043d\u0430',
+  d_chamberVol:'\u041e\u0431\u044a\u0451\u043c \u043a\u0430\u043c\u0435\u0440\u044b',
+  d_chamberMass:'\u041c\u0430\u0441\u0441\u0430 \u043a\u043e\u0440\u043f\u0443\u0441\u0430',
+  d_grainVol:'\u041e\u0431\u044a\u0451\u043c \u0442\u043e\u043f\u043b\u0438\u0432\u0430',
+  d_grainMass:'\u041c\u0430\u0441\u0441\u0430 \u0442\u043e\u043f\u043b\u0438\u0432\u0430',
+  d_dens:'\u042d\u0444\u0444\u0435\u043a\u0442\u0438\u0432\u043d\u0430\u044f \u043f\u043b\u043e\u0442\u043d\u043e\u0441\u0442\u044c',
+  d_cstar:'c* (\u0445\u0430\u0440\u0430\u043a\u0442\u0435\u0440\u0438\u0441\u0442\u0438\u0447\u0435\u0441\u043a\u0430\u044f \u0441\u043a\u043e\u0440\u043e\u0441\u0442\u044c)',
+  d_R:'\u0413\u0430\u0437\u043e\u0432\u0430\u044f \u043f\u043e\u0441\u0442\u043e\u044f\u043d\u043d\u0430\u044f R',
+  d_be:'\u042d\u0444\u0444\u0435\u043a\u0442\u0438\u0432\u043d\u043e\u0441\u0442\u044c \u0433\u043e\u0440\u0435\u043d\u0438\u044f',
+  d_throatArea:'\u041f\u043b\u043e\u0449\u0430\u0434\u044c \u0433\u043e\u0440\u043b\u043e\u0432\u0438\u043d\u044b',
+  d_exhaustArea:'\u041f\u043b\u043e\u0449\u0430\u0434\u044c \u0441\u0440\u0435\u0437\u0430',
+  d_expansion:'\u0421\u0442\u0435\u043f\u0435\u043d\u044c \u0440\u0430\u0441\u0448\u0438\u0440\u0435\u043d\u0438\u044f',
+  d_grainSumLen:'\u0421\u0443\u043c\u043c\u0430\u0440\u043d\u0430\u044f \u0434\u043b\u0438\u043d\u0430 \u0448\u0430\u0448\u0435\u043a',
+  d_fill:'\u0417\u0430\u043f\u043e\u043b\u043d\u0435\u043d\u0438\u0435 \u043a\u0430\u043c\u0435\u0440\u044b',
+  d_totalMass:'\u0421\u0442\u0430\u0440\u0442\u043e\u0432\u0430\u044f \u043c\u0430\u0441\u0441\u0430',
+  r_class:'\u041a\u043b\u0430\u0441\u0441 \u0434\u0432\u0438\u0433\u0430\u0442\u0435\u043b\u044f',
+  r_totalImpulse:'\u041f\u043e\u043b\u043d\u044b\u0439 \u0438\u043c\u043f\u0443\u043b\u044c\u0441',
+  r_maxThrust:'\u041c\u0430\u043a\u0441\u0438\u043c\u0430\u043b\u044c\u043d\u0430\u044f \u0442\u044f\u0433\u0430',
+  r_avgThrust:'\u0421\u0440\u0435\u0434\u043d\u044f\u044f \u0442\u044f\u0433\u0430',
+  r_maxPressure:'\u041c\u0430\u043a\u0441\u0438\u043c\u0430\u043b\u044c\u043d\u043e\u0435 \u0434\u0430\u0432\u043b\u0435\u043d\u0438\u0435',
+  r_burnTime:'\u0412\u0440\u0435\u043c\u044f \u0440\u0430\u0431\u043e\u0442\u044b',
+  r_isp:'\u0423\u0434\u0435\u043b\u044c\u043d\u044b\u0439 \u0438\u043c\u043f\u0443\u043b\u044c\u0441',
+  r_maxKn:'\u041c\u0430\u043a\u0441. Kn',
+  r_avgKn:'\u0421\u0440\u0435\u0434\u043d\u0438\u0439 Kn',
+  r_propMass:'\u041c\u0430\u0441\u0441\u0430 \u0442\u043e\u043f\u043b\u0438\u0432\u0430',
+  r_initialMass:'\u0421\u0442\u0430\u0440\u0442\u043e\u0432\u0430\u044f \u043c\u0430\u0441\u0441\u0430',
+  r_finalMass:'\u041c\u0430\u0441\u0441\u0430 \u043f\u043e\u0441\u043b\u0435 \u0432\u044b\u0433\u043e\u0440\u0430\u043d\u0438\u044f',
+  r_totalTime:'\u041f\u043e\u043b\u043d\u043e\u0435 \u0432\u0440\u0435\u043c\u044f',
+  r_expansion:'\u0421\u0442\u0435\u043f\u0435\u043d\u044c \u0440\u0430\u0441\u0448\u0438\u0440\u0435\u043d\u0438\u044f',
+  r_throatDia:'\u041a\u043e\u043d\u0435\u0447\u043d\u044b\u0439 \u00d8 \u0433\u043e\u0440\u043b\u043e\u0432\u0438\u043d\u044b',
+  c_thrust:'\u0422\u044f\u0433\u0430 F(t)',
+  c_pressure:'\u0414\u0430\u0432\u043b\u0435\u043d\u0438\u0435 \u0432 \u043a\u0430\u043c\u0435\u0440\u0435 p(t)',
+  c_kn:'Kn(t)',
+  c_mass:'\u041c\u0430\u0441\u0441\u0430 \u0438 \u0432\u044b\u0433\u043e\u0440\u0430\u043d\u0438\u0435',
+  ax_t:'\u0412\u0440\u0435\u043c\u044f',
+  ax_thrust:'\u0422\u044f\u0433\u0430, \u041d',
+  ax_pressure:'\u0414\u0430\u0432\u043b\u0435\u043d\u0438\u0435, \u0431\u0430\u0440',
+  ax_kn:'Kn',
+  ax_mass:'\u041c\u0430\u0441\u0441\u0430, \u043a\u0433',
+  ax_progress:'\u0412\u044b\u0433\u043e\u0440\u0430\u043d\u0438\u0435',
+  ax_total:'\u041f\u043e\u043b\u043d\u0430\u044f \u0434\u043b\u0438\u043d\u0430',
+  ax_chamber:'\u041a\u0430\u043c\u0435\u0440\u0430',
+  ax_grain:'\u0428\u0430\u0448\u043a\u0430',
+  ax_nozzle:'\u0421\u043e\u043f\u043b\u043e',
+  ax_head:'\u0413\u043e\u043b\u043e\u0432\u043a\u0430',
+  ax_throat:'\u00d8 \u0433\u043e\u0440\u043b\u043e\u0432\u0438\u043d\u044b',
+  ax_exhaust:'\u00d8 \u0441\u0440\u0435\u0437\u0430',
+  ax_core:'\u00d8 \u043a\u0430\u043d\u0430\u043b\u0430',
+  ax_wall:'\u0421\u0442\u0435\u043d\u043a\u0430',
+  ax_grainDia:'\u00d8 \u0448\u0430\u0448\u043a\u0438',
+  ax_outer:'\u041d\u0430\u0440\u0443\u0436\u043d\u044b\u0439 \u00d8',
+  ax_chamberDia:'\u00d8 \u043a\u0430\u043c\u0435\u0440\u044b',
+  ax_seg:'\u0448\u0430\u0448\u043a\u0430',
+  msg_ok:'\u0420\u0430\u0441\u0447\u0451\u0442 \u0443\u0441\u043f\u0435\u0448\u043d\u043e \u0437\u0430\u0432\u0435\u0440\u0448\u0451\u043d.',
+  warn_density:'\u041d\u0435\u043e\u0431\u044b\u0447\u043d\u044b\u0439 \u043a\u043e\u044d\u0444\u0444\u0438\u0446\u0438\u0435\u043d\u0442 \u0437\u0430\u043f\u043e\u043b\u043d\u0435\u043d\u0438\u044f (\u043e\u0436\u0438\u0434\u0430\u0435\u0442\u0441\u044f 0.5\u20131.0).',
+  err_generic:'\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0440\u0430\u0441\u0441\u0447\u0438\u0442\u0430\u0442\u044c: ',
+  err_prop:'\u041d\u0435\u043a\u043e\u0440\u0440\u0435\u043a\u0442\u043d\u044b\u0435 \u043f\u0430\u0440\u0430\u043c\u0435\u0442\u0440\u044b \u0442\u043e\u043f\u043b\u0438\u0432\u0430.',
+  err_chamberDia:'\u0414\u0438\u0430\u043c\u0435\u0442\u0440 \u043a\u0430\u043c\u0435\u0440\u044b \u0434\u043e\u043b\u0436\u0435\u043d \u0431\u044b\u0442\u044c \u0431\u043e\u043b\u044c\u0448\u0435 0.',
+  err_chamberLen:'\u0414\u043b\u0438\u043d\u0430 \u043a\u0430\u043c\u0435\u0440\u044b \u0434\u043e\u043b\u0436\u043d\u0430 \u0431\u044b\u0442\u044c \u0431\u043e\u043b\u044c\u0448\u0435 0.',
+  err_grainDia:'\u0414\u0438\u0430\u043c\u0435\u0442\u0440 \u0448\u0430\u0448\u043a\u0438 \u0434\u043e\u043b\u0436\u0435\u043d \u0431\u044b\u0442\u044c \u0431\u043e\u043b\u044c\u0448\u0435 0.',
+  err_grainLen:'\u0414\u043b\u0438\u043d\u0430 \u0448\u0430\u0448\u043a\u0438 \u0434\u043e\u043b\u0436\u043d\u0430 \u0431\u044b\u0442\u044c \u0431\u043e\u043b\u044c\u0448\u0435 0.',
+  err_coreNeg:'\u0414\u0438\u0430\u043c\u0435\u0442\u0440 \u043a\u0430\u043d\u0430\u043b\u0430 \u043d\u0435 \u043c\u043e\u0436\u0435\u0442 \u0431\u044b\u0442\u044c \u043e\u0442\u0440\u0438\u0446\u0430\u0442\u0435\u043b\u044c\u043d\u044b\u043c.',
+  err_coreBig:'\u0414\u0438\u0430\u043c\u0435\u0442\u0440 \u043a\u0430\u043d\u0430\u043b\u0430 \u0434\u043e\u043b\u0436\u0435\u043d \u0431\u044b\u0442\u044c \u043c\u0435\u043d\u044c\u0448\u0435 \u0434\u0438\u0430\u043c\u0435\u0442\u0440\u0430 \u0448\u0430\u0448\u043a\u0438.',
+  err_tooBigGrain:'\u0428\u0430\u0448\u043a\u0430 \u043d\u0435 \u043f\u043e\u043c\u0435\u0449\u0430\u0435\u0442\u0441\u044f \u0432 \u043a\u0430\u043c\u0435\u0440\u0443 (\u00d8 \u0448\u0430\u0448\u043a\u0438 \u2265 \u00d8 \u043a\u0430\u043c\u0435\u0440\u044b).',
+  err_noFit:'\u0422\u043e\u043f\u043b\u0438\u0432\u043e \u043d\u0435 \u043f\u043e\u043c\u0435\u0449\u0430\u0435\u0442\u0441\u044f \u0432 \u043a\u0430\u043c\u0435\u0440\u0443 (\u0441\u0443\u043c\u043c\u0430\u0440\u043d\u0430\u044f \u0434\u043b\u0438\u043d\u0430 \u0448\u0430\u0448\u0435\u043a > \u0434\u043b\u0438\u043d\u044b \u043a\u0430\u043c\u0435\u0440\u044b).',
+  err_chamberBig:'\u041a\u0430\u043c\u0435\u0440\u0430 \u0441\u043b\u0438\u0448\u043a\u043e\u043c \u0431\u043e\u043b\u044c\u0448\u0430\u044f (\u0434\u043b\u0438\u043d\u0430 \u043a\u0430\u043c\u0435\u0440\u044b > 2\u00d7 \u0441\u0443\u043c\u043c\u0430\u0440\u043d\u043e\u0439 \u0434\u043b\u0438\u043d\u044b \u0448\u0430\u0448\u0435\u043a).',
+  err_throat:'\u0414\u0438\u0430\u043c\u0435\u0442\u0440 \u0433\u043e\u0440\u043b\u043e\u0432\u0438\u043d\u044b \u043d\u0435 \u0434\u043e\u043b\u0436\u0435\u043d \u043f\u0440\u0435\u0432\u044b\u0448\u0430\u0442\u044c \u0434\u0438\u0430\u043c\u0435\u0442\u0440 \u0441\u0440\u0435\u0437\u0430.',
+  err_eta:'\u041a\u041f\u0414 \u0441\u043e\u043f\u043b\u0430 \u0434\u043e\u043b\u0436\u0435\u043d \u0431\u044b\u0442\u044c \u0431\u043e\u043b\u044c\u0448\u0435 0.',
+  err_exhaust:'\u0414\u0438\u0430\u043c\u0435\u0442\u0440 \u0441\u0440\u0435\u0437\u0430 \u0434\u043e\u043b\u0436\u0435\u043d \u0431\u044b\u0442\u044c \u0431\u043e\u043b\u044c\u0448\u0435 0.',
+  err_timeout:'\u0412\u0440\u0435\u043c\u044f \u0433\u043e\u0440\u0435\u043d\u0438\u044f \u043f\u0440\u0435\u0432\u044b\u0448\u0430\u0435\u0442 \u043b\u0438\u043c\u0438\u0442 \u2014 \u043f\u0440\u043e\u0432\u0435\u0440\u044c\u0442\u0435 \u043f\u0430\u0440\u0430\u043c\u0435\u0442\u0440\u044b.',
+  err_segments:'\u0427\u0438\u0441\u043b\u043e \u0448\u0430\u0448\u0435\u043a \u0434\u043e\u043b\u0436\u043d\u043e \u0431\u044b\u0442\u044c \u043d\u0435 \u043c\u0435\u043d\u044c\u0448\u0435 1.',
+  err_noBurnSurface:'\u0412\u0441\u0435 \u043f\u043e\u0432\u0435\u0440\u0445\u043d\u043e\u0441\u0442\u0438 \u0448\u0430\u0448\u043a\u0438 \u0437\u0430\u0431\u0440\u043e\u043d\u0438\u0440\u043e\u0432\u0430\u043d\u044b \u2014 \u0443 \u0448\u0430\u0448\u043a\u0438 \u043d\u0435\u0442 \u0433\u043e\u0440\u044f\u0449\u0435\u0439 \u043f\u043e\u0432\u0435\u0440\u0445\u043d\u043e\u0441\u0442\u0438, \u0433\u043e\u0440\u0435\u043d\u0438\u0435 \u043d\u0435\u0432\u043e\u0437\u043c\u043e\u0436\u043d\u043e.'
+},
+zh: {
+  appTitle:'\u56fa\u4f53\u706b\u7bad\u53d1\u52a8\u673a\u8ba1\u7b97\u5668',
+  appSubtitle:'\u56fa\u4f53\u706b\u7bad\u53d1\u52a8\u673a\u8bbe\u8ba1\u4e0e\u4eff\u771f',
+  sec_propellant:'\u63a8\u8fdb\u5242\u4e0e\u53d1\u52a8\u673a',
+  sec_chamber:'\u71c3\u70e7\u5ba4',
+  sec_grain:'\u63a8\u8fdb\u5242\u836f\u67f1',
+  sec_nozzle:'\u55b7\u7ba1',
+  sec_sim:'\u4eff\u771f',
+  sec_schematic:'\u7ed3\u6784\u793a\u610f\u56fe',
+  sec_longitudinal:'\u7eb5\u5256\u9762',
+  sec_cross:'\u6a2a\u622a\u9762',
+  sec_results:'\u8ba1\u7b97\u7ed3\u679c',
+  sec_charts:'\u66f2\u7ebf\u56fe',
+  sec_export:'\u5bfc\u51fa\u4e0e\u5de5\u7a0b',
+  f_motorName:'\u53d1\u52a8\u673a\u540d\u79f0',
+  f_manufacturer:'\u5236\u9020\u5546',
+  f_propellant:'\u63a8\u8fdb\u5242',
+  f_M:'\u6469\u5c14\u8d28\u91cf M',
+  f_ro:'\u5bc6\u5ea6 \u03c1',
+  f_k:'\u7edd\u70ed\u6307\u6570 k',
+  f_k2ph:'\u4e24\u76f8 k\u2082',
+  f_T0:'\u7406\u8bba\u71c3\u6e29 T\u2080',
+  f_T:'\u6709\u6548\u71c3\u6e29 T',
+  f_a:'\u71c3\u901f\u7cfb\u6570 a',
+  f_n:'\u71c3\u901f\u6307\u6570 n',
+  f_chamberDia:'\u71c3\u70e7\u5ba4\u5185\u5f84',
+  f_chamberLen:'\u71c3\u70e7\u5ba4\u957f\u5ea6',
+  f_wallThk:'\u58c1\u539a',
+  f_wallDensity:'\u58f3\u4f53\u5bc6\u5ea6',
+  f_headMass:'\u524d\u5c01\u5934\u8d28\u91cf',
+  f_headLen:'\u524d\u5c01\u5934\u957f\u5ea6',
+  f_nozzleLen:'\u55b7\u7ba1\u957f\u5ea6',
+  f_grainDia:'\u836f\u67f1\u76f4\u5f84',
+  f_grainLen:'\u836f\u67f1\u957f\u5ea6',
+  f_coreDia:'\u901a\u9053\u76f4\u5f84',
+  f_densityRatio:'\u586b\u5145\u7cfb\u6570',
+  f_segments:'\u836f\u67f1\u6570\u91cf',
+  f_throatDia:'\u5589\u90e8\u76f4\u5f84',
+  f_exhaustDia:'\u51fa\u53e3\u76f4\u5f84',
+  f_eta:'\u55b7\u7ba1\u6548\u7387 \u03b7',
+  f_erosion:'\u5589\u90e8\u70e7\u8680',
+  f_nozzleMass:'\u55b7\u7ba1\u8d28\u91cf',
+  f_step:'\u65f6\u95f4\u6b65\u957f',
+  f_maxTime:'\u65f6\u95f4\u4e0a\u9650',
+  cp_name:'\u81ea\u5b9a\u4e49\u63a8\u8fdb\u5242\u540d\u79f0',
+  ins_group:'\u836f\u67f1\u963b\u71c3',
+  ins_hint:'\u52fe\u9009\u7684\u8868\u9762\u5df2\u963b\u71c3\uff0c\u4e0d\u53c2\u4e0e\u71c3\u70e7\u3002',
+  ins_outer:'\u5916\u8868\u9762',
+  ins_faces:'\u7aef\u9762',
+  ins_core:'\u5185\u901a\u9053',
+  btn_newPropellant:'\uff0b \u65b0\u5efa',
+  btn_delete:'\u5220\u9664',
+  btn_compute:'\u5f00\u59cb\u8ba1\u7b97',
+  leg_wall:'\u58f3\u4f53',
+  leg_grain:'\u63a8\u8fdb\u5242',
+  leg_channel:'\u901a\u9053',
+  leg_nozzle:'\u55b7\u7ba1',
+  leg_inhibited:'\u5df2\u963b\u71c3\u8868\u9762',
+  e_eng:'RASP .eng',
+  e_rse:'RockSim .rse',
+  e_csv:'\u6570\u636e .csv',
+  e_json:'\u5de5\u7a0b .json',
+  e_save:'\u4fdd\u5b58',
+  e_load:'\u8f7d\u5165',
+  e_reset:'\u91cd\u7f6e',
+  e_hint:'RASP\uff08.eng\uff09\u4e0e RockSim\uff08.rse\uff09\u6587\u4ef6\u53ef\u76f4\u63a5\u5bfc\u5165 OpenRocket\uff1a\u7f16\u8f91 \u2192 \u9996\u9009\u9879 \u2192 \u53d1\u52a8\u673a\uff0c\u6216\u5728\u53d1\u52a8\u673a\u9009\u62e9\u5bf9\u8bdd\u6846\u4e2d\u5bfc\u5165\u3002',
+  d_outerDia:'\u5916\u5f84',
+  d_totalLen:'\u603b\u957f\u5ea6',
+  d_chamberVol:'\u71c3\u70e7\u5ba4\u5bb9\u79ef',
+  d_chamberMass:'\u58f3\u4f53\u8d28\u91cf',
+  d_grainVol:'\u836f\u67f1\u4f53\u79ef',
+  d_grainMass:'\u63a8\u8fdb\u5242\u8d28\u91cf',
+  d_dens:'\u6709\u6548\u5bc6\u5ea6',
+  d_cstar:'c*\uff08\u7279\u5f81\u901f\u5ea6\uff09',
+  d_R:'\u6c14\u4f53\u5e38\u6570 R',
+  d_be:'\u71c3\u70e7\u6548\u7387',
+  d_throatArea:'\u5589\u90e8\u9762\u79ef',
+  d_exhaustArea:'\u51fa\u53e3\u9762\u79ef',
+  d_expansion:'\u81a8\u80c0\u6bd4',
+  d_grainSumLen:'\u836f\u67f1\u603b\u957f',
+  d_fill:'\u88c5\u586b\u7387',
+  d_totalMass:'\u8d77\u98de\u8d28\u91cf',
+  r_class:'\u53d1\u52a8\u673a\u7b49\u7ea7',
+  r_totalImpulse:'\u603b\u51b2',
+  r_maxThrust:'\u5cf0\u503c\u63a8\u529b',
+  r_avgThrust:'\u5e73\u5747\u63a8\u529b',
+  r_maxPressure:'\u5cf0\u503c\u538b\u529b',
+  r_burnTime:'\u5de5\u4f5c\u65f6\u95f4',
+  r_isp:'\u6bd4\u51b2',
+  r_maxKn:'\u6700\u5927 Kn',
+  r_avgKn:'\u5e73\u5747 Kn',
+  r_propMass:'\u63a8\u8fdb\u5242\u8d28\u91cf',
+  r_initialMass:'\u8d77\u98de\u8d28\u91cf',
+  r_finalMass:'\u71c3\u5c3d\u8d28\u91cf',
+  r_totalTime:'\u603b\u65f6\u95f4',
+  r_expansion:'\u81a8\u80c0\u6bd4',
+  r_throatDia:'\u6700\u7ec8\u5589\u90e8\u76f4\u5f84',
+  c_thrust:'\u63a8\u529b F(t)',
+  c_pressure:'\u71c3\u70e7\u5ba4\u538b\u529b p(t)',
+  c_kn:'Kn(t)',
+  c_mass:'\u8d28\u91cf\u4e0e\u71c3\u5c3d\u8fdb\u5ea6',
+  ax_t:'\u65f6\u95f4',
+  ax_thrust:'\u63a8\u529b, N',
+  ax_pressure:'\u538b\u529b, bar',
+  ax_kn:'Kn',
+  ax_mass:'\u8d28\u91cf, kg',
+  ax_progress:'\u71c3\u5c3d\u8fdb\u5ea6',
+  ax_total:'\u603b\u957f\u5ea6',
+  ax_chamber:'\u71c3\u70e7\u5ba4',
+  ax_grain:'\u836f\u67f1',
+  ax_nozzle:'\u55b7\u7ba1',
+  ax_head:'\u524d\u5c01\u5934',
+  ax_throat:'\u5589\u5f84',
+  ax_exhaust:'\u51fa\u53e3\u5f84',
+  ax_core:'\u901a\u9053\u5f84',
+  ax_wall:'\u58c1\u539a',
+  ax_grainDia:'\u836f\u67f1\u5f84',
+  ax_outer:'\u5916\u5f84',
+  ax_chamberDia:'\u71c3\u70e7\u5ba4\u5f84',
+  ax_seg:'\u836f\u67f1',
+  msg_ok:'\u8ba1\u7b97\u6210\u529f\u5b8c\u6210\u3002',
+  warn_density:'\u586b\u5145\u7cfb\u6570\u5f02\u5e38\uff08\u5e94\u5728 0.5\u20131.0 \u4e4b\u95f4\uff09\u3002',
+  err_generic:'\u65e0\u6cd5\u8ba1\u7b97\uff1a',
+  err_prop:'\u63a8\u8fdb\u5242\u53c2\u6570\u65e0\u6548\u3002',
+  err_chamberDia:'\u71c3\u70e7\u5ba4\u76f4\u5f84\u5fc5\u987b\u5927\u4e8e 0\u3002',
+  err_chamberLen:'\u71c3\u70e7\u5ba4\u957f\u5ea6\u5fc5\u987b\u5927\u4e8e 0\u3002',
+  err_grainDia:'\u836f\u67f1\u76f4\u5f84\u5fc5\u987b\u5927\u4e8e 0\u3002',
+  err_grainLen:'\u836f\u67f1\u957f\u5ea6\u5fc5\u987b\u5927\u4e8e 0\u3002',
+  err_coreNeg:'\u901a\u9053\u76f4\u5f84\u4e0d\u80fd\u4e3a\u8d1f\u3002',
+  err_coreBig:'\u901a\u9053\u76f4\u5f84\u5fc5\u987b\u5c0f\u4e8e\u836f\u67f1\u76f4\u5f84\u3002',
+  err_tooBigGrain:'\u836f\u67f1\u88c5\u4e0d\u8fdb\u71c3\u70e7\u5ba4\uff08\u836f\u67f1\u76f4\u5f84 \u2265 \u71c3\u70e7\u5ba4\u76f4\u5f84\uff09\u3002',
+  err_noFit:'\u63a8\u8fdb\u5242\u88c5\u4e0d\u8fdb\u71c3\u70e7\u5ba4\uff08\u836f\u67f1\u603b\u957f > \u71c3\u70e7\u5ba4\u957f\u5ea6\uff09\u3002',
+  err_chamberBig:'\u71c3\u70e7\u5ba4\u8fc7\u5927\uff08\u71c3\u70e7\u5ba4\u957f\u5ea6 > \u836f\u67f1\u603b\u957f\u7684 2 \u500d\uff09\u3002',
+  err_throat:'\u5589\u90e8\u76f4\u5f84\u4e0d\u5f97\u8d85\u8fc7\u51fa\u53e3\u76f4\u5f84\u3002',
+  err_eta:'\u55b7\u7ba1\u6548\u7387\u5fc5\u987b\u5927\u4e8e 0\u3002',
+  err_exhaust:'\u51fa\u53e3\u76f4\u5f84\u5fc5\u987b\u5927\u4e8e 0\u3002',
+  err_timeout:'\u71c3\u70e7\u65f6\u95f4\u8d85\u8fc7\u4e0a\u9650 \u2014 \u8bf7\u68c0\u67e5\u53c2\u6570\u3002',
+  err_segments:'\u836f\u67f1\u6570\u91cf\u81f3\u5c11\u4e3a 1\u3002',
+  err_noBurnSurface:'\u836f\u67f1\u6240\u6709\u8868\u9762\u5747\u5df2\u963b\u71c3 \u2014 \u6ca1\u6709\u71c3\u70e7\u8868\u9762\uff0c\u65e0\u6cd5\u71c3\u70e7\u3002'
+}
+};
+let LANG = 'en';
+let T = I18N.en;
+
+/* Composition notes for the standard propellants (from srm/propellant.py) */
+const COMPOSITION = {
+en: {
+  KNDX:  'Dextrose caramel \u2014 65% KNO\u2083 + 35% dextrose',
+  KNSO:  'Sorbitol caramel \u2014 65% KNO\u2083 + 35% sorbitol',
+  KNSU:  'Sugar caramel \u2014 65% KNO\u2083 + 35% sugar',
+  ANSIAL:'Ammonium-nitrate composite \u2014 60% NH\u2084NO\u2083 + 20% Al + 20% silicone',
+  custom:'User-defined propellant'
+},
+ru: {
+  KNDX:  '\u0414\u0435\u043a\u0441\u0442\u0440\u043e\u0437\u043d\u0430\u044f \u043a\u0430\u0440\u0430\u043c\u0435\u043b\u044c \u2014 65% KNO\u2083 + 35% \u0434\u0435\u043a\u0441\u0442\u0440\u043e\u0437\u0430',
+  KNSO:  '\u0421\u043e\u0440\u0431\u0438\u0442\u043e\u0432\u0430\u044f \u043a\u0430\u0440\u0430\u043c\u0435\u043b\u044c \u2014 65% KNO\u2083 + 35% \u0441\u043e\u0440\u0431\u0438\u0442',
+  KNSU:  '\u0421\u0430\u0445\u0430\u0440\u043d\u0430\u044f \u043a\u0430\u0440\u0430\u043c\u0435\u043b\u044c \u2014 65% KNO\u2083 + 35% \u0441\u0430\u0445\u0430\u0440',
+  ANSIAL:'\u0410\u043c\u043c\u0438\u0430\u0447\u043d\u043e-\u0441\u0435\u043b\u0438\u0442\u0440\u043e\u0432\u044b\u0439 \u0441\u043e\u0441\u0442\u0430\u0432 \u2014 60% NH\u2084NO\u2083 + 20% Al + 20% \u0441\u0438\u043b\u0438\u043a\u043e\u043d',
+  custom:'\u0422\u043e\u043f\u043b\u0438\u0432\u043e, \u0437\u0430\u0434\u0430\u043d\u043d\u043e\u0435 \u043f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u0435\u043b\u0435\u043c'
+},
+zh: {
+  KNDX:  '\u8461\u8404\u7cd6\u7126\u7cd6 \u2014 65% KNO\u2083 + 35% \u8461\u8404\u7cd6',
+  KNSO:  '\u5c71\u68a8\u9187\u7126\u7cd6 \u2014 65% KNO\u2083 + 35% \u5c71\u68a8\u9187',
+  KNSU:  '\u8517\u7cd6\u7126\u7cd6 \u2014 65% KNO\u2083 + 35% \u8517\u7cd6',
+  ANSIAL:'\u785d\u9178\u94f5\u57fa\u590d\u5408\u63a8\u8fdb\u5242 \u2014 60% NH\u2084NO\u2083 + 20% Al + 20% \u7845\u916e',
+  custom:'\u7528\u6237\u81ea\u5b9a\u4e49\u63a8\u8fdb\u5242'
+}
+};
+
+function updateComposition(){
+  const node = $('propComposition');
+  if (!node) return;
+  const table = COMPOSITION[LANG] || COMPOSITION.en;
+  const key = $('propSelect').value;
+  node.textContent = (key === '__new__' || !table[key]) ? table.custom : table[key];
+}
+
+/* ==================================================================
+   APP: helpers
+   ================================================================== */
+const Core = globalThis.SrmCore;
+const STORAGE_KEY = 'srm_calc_v2';
+
+const $ = id => document.getElementById(id);
+const qsa = sel => Array.from(document.querySelectorAll(sel));
+function clear(node){ while (node.firstChild) node.removeChild(node.firstChild); }
+function esc(s){ return String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c])); }
+function numVal(id){
+  const e = $(id);
+  if (!e) return NaN;
+  const v = parseFloat(String(e.value).trim().replace(',', '.'));
+  return isFinite(v) ? v : NaN;
+}
+function fmtNum(v, d){
+  if (typeof v !== 'number' || !isFinite(v)) return '\u2014';
+  const a = Math.abs(v);
+  if (a >= 1e6 || (a > 0 && a < 1e-3)) return v.toExponential(3).replace(/\.?0+e/, 'e').replace('e+', 'e');
+  return v.toFixed(d == null ? 3 : d);
+}
+function fmtG(v, sig){ return fmtNum(v, sig == null ? 3 : sig); }
+
+function AppError(key, detail){ this.key = key; this.detail = detail || ''; }
+AppError.prototype = Object.create(Error.prototype);
+AppError.prototype.name = 'AppError';
+function fail(key, detail){ throw new AppError(key, detail); }
+
+/* ==================================================================
+   APP: persistent state
+   ================================================================== */
+const DEFAULT_STATE = {
+  lang: 'en', theme: 'dark',
+  motorName: 'Demo', manufacturer: 'Custom',
+  propKey: 'KNDX',
+  customProps: {},
+  cp: { name:'MY-1', M:42.39, ro:1879, k:1.1308, k2ph:1.043, T0:1710, T:1625, a:5.5, n:0.41 },
+  chamberDia:55, chamberLen:220, wallThk:3, wallDensity:2700,
+  headMass:100, headLen:30, nozzleLen:50,
+  grainDia:50, grainLen:200, coreDia:20, densityRatio:0.95, segments:1,
+  insOuter:true, insFaces:false, insCore:false,
+  throatDia:10, exhaustDia:25, eta:0.85, erosion:0, nozzleMass:50,
+  step:0.001, maxTime:60
+};
+
+let customProps = {};
+let currentResult = null;
+
+const FIELD_IDS = {
+  motorName:'text', manufacturer:'text',
+  chamberDia:'num', chamberLen:'num', wallThk:'num', wallDensity:'num',
+  headMass:'num', headLen:'num', nozzleLen:'num',
+  grainDia:'num', grainLen:'num', coreDia:'num', densityRatio:'num', segments:'num',
+  throatDia:'num', exhaustDia:'num', eta:'num', erosion:'num', nozzleMass:'num',
+  step:'num', maxTime:'num'
+};
+
+function readState(){
+  const s = {
+    lang: LANG, theme: document.documentElement.getAttribute('data-theme'),
+    motorName: $('motorName').value,
+    manufacturer: $('manufacturer').value,
+    propKey: $('propSelect').value,
+    customProps: JSON.parse(JSON.stringify(customProps)),
+    cp: {
+      name: $('cpName').value,
+      M: numVal('cpM'), ro: numVal('cpRo'), k: numVal('cpK'), k2ph: numVal('cpK2ph'),
+      T0: numVal('cpT0'), T: numVal('cpT'), a: numVal('cpA'), n: numVal('cpN')
+    },
+    insOuter: $('insOuter').checked, insFaces: $('insFaces').checked, insCore: $('insCore').checked
+  };
+  for (const id in FIELD_IDS){
+    if (id === 'motorName' || id === 'manufacturer') continue;
+    s[id] = numVal(id);
+  }
+  s.segments = Math.max(1, Math.round(isFinite(numVal('segments')) ? numVal('segments') : 1));
+  return s;
+}
+
+function setInput(id, v){ const e = $(id); if (e && v != null) e.value = v; }
+function setCheck(id, v){ const e = $(id); if (e) e.checked = !!v; }
+
+function writeState(s){
+  s = Object.assign({}, DEFAULT_STATE, s || {});
+  setInput('motorName', s.motorName);
+  setInput('manufacturer', s.manufacturer);
+  customProps = JSON.parse(JSON.stringify(s.customProps || {}));
+  const cp = Object.assign({}, DEFAULT_STATE.cp, s.cp || {});
+  setInput('cpName', cp.name); setInput('cpM', cp.M); setInput('cpRo', cp.ro);
+  setInput('cpK', cp.k); setInput('cpK2ph', cp.k2ph); setInput('cpT0', cp.T0);
+  setInput('cpT', cp.T); setInput('cpA', cp.a); setInput('cpN', cp.n);
+  for (const id in FIELD_IDS){
+    if (id === 'motorName' || id === 'manufacturer') continue;
+    setInput(id, s[id]);
+  }
+  setCheck('insOuter', s.insOuter); setCheck('insFaces', s.insFaces); setCheck('insCore', s.insCore);
+  setLang(s.lang, false);
+  setTheme(s.theme, false);
+  rebuildPropSelect(s.propKey);
+}
+
+/* ==================================================================
+   APP: propellant resolution & model building
+   ================================================================== */
+function propFromState(s){
+  let p;
+  if (s.propKey === '__new__'){
+    p = { name: s.cp.name || 'CUSTOM', M: s.cp.M, k: s.cp.k, k2ph: s.cp.k2ph,
+          T0: s.cp.T0, T: s.cp.T, ro: s.cp.ro, a: s.cp.a, n: s.cp.n };
+  } else if (Core.STANDARD_PROPELLANTS[s.propKey]){
+    p = Core.STANDARD_PROPELLANTS[s.propKey];
+  } else if (customProps[s.propKey]){
+    p = customProps[s.propKey];
+  } else {
+    fail('err_prop');
+  }
+  const pos = [p.M, p.T, p.T0, p.ro, p.a];
+  for (const v of pos) if (!(isFinite(v) && v > 0)) fail('err_prop');
+  if (!(p.k > 1)) fail('err_prop');
+  if (!(p.k2ph > 1)) fail('err_prop');
+  if (!(isFinite(p.n) && p.n > 0 && p.n < 1)) fail('err_prop');
+  return Core.makePropellant(p);
+}
+
+function validateGeometry(s, warnings){
+  if (!(s.chamberDia > 0)) fail('err_chamberDia');
+  if (!(s.chamberLen > 0)) fail('err_chamberLen');
+  if (!(s.grainDia > 0)) fail('err_grainDia');
+  if (!(s.grainLen > 0)) fail('err_grainLen');
+  if (!(s.coreDia >= 0)) fail('err_coreNeg');
+  if (s.coreDia >= s.grainDia) fail('err_coreBig');
+  if (s.grainDia > s.chamberDia) fail('err_tooBigGrain');
+  if (!(s.segments >= 1)) fail('err_segments');
+  if (s.insOuter && s.insFaces && s.insCore) fail('err_noBurnSurface');
+  const sumLen = s.grainLen * s.segments;
+  if (sumLen > s.chamberLen) fail('err_noFit');
+  if (s.chamberLen > sumLen * 2.0) fail('err_chamberBig');
+  if (!(s.densityRatio >= 0.5 && s.densityRatio <= 1.0)) warnings.push('warn_density');
+  if (!(s.exhaustDia > 0)) fail('err_exhaust');
+  if (s.throatDia > s.exhaustDia) fail('err_throat');
+  if (!(s.eta > 0)) fail('err_eta');
+  if (!(s.step > 0)) fail('err_generic', ': ' + T.f_step);
+  if (!(s.maxTime >= s.step)) fail('err_generic', ': ' + T.f_maxTime);
+  return sumLen;
+}
+
+function buildModel(s){
+  const warnings = [];
+  const prop = propFromState(s);
+  const sumLen = validateGeometry(s, warnings);
+  const grains = [];
+  for (let i = 0; i < s.segments; i++){
+    grains.push(Core.makeGrain({
+      diameter: s.grainDia / 1000, length: s.grainLen / 1000, coreDiameter: s.coreDia / 1000,
+      densityRatio: s.densityRatio,
+      insulation: { outer: s.insOuter, faces: s.insFaces, core: s.insCore },
+      propellant: prop
+    }));
+  }
+  const nozzle = Core.makeNozzle({
+    throatDiameter: s.throatDia / 1000, exhaustDiameter: s.exhaustDia / 1000,
+    eta: s.eta, erosion: s.erosion / 1000, mass: s.nozzleMass / 1000
+  });
+  const motor = Core.makeMotor({
+    title: s.motorName || 'Motor', author: s.manufacturer || '',
+    diameter: s.chamberDia / 1000, length: s.chamberLen / 1000,
+    totalLength: (s.headLen + s.chamberLen + s.nozzleLen) / 1000,
+    thickness: s.wallThk / 1000, density: s.wallDensity, headMass: s.headMass / 1000,
+    nozzle, grains
+  });
+  return { prop, motor, warnings, sumLen };
+}
+
+function runSimulation(s){
+  const built = buildModel(s);
+  const result = Core.simulate(built.motor, { step: s.step, maxTime: s.maxTime });
+  if (!result.ok) fail('err_timeout');
+  return { built, result };
+}
+
+/* ==================================================================
+   APP: derived panels
+   ================================================================== */
+function derivedRows(node, rows){
+  if (!node) return;
+  clear(node);
+  for (const r of rows){
+    const a = document.createElement('span'); a.textContent = r[0]; node.appendChild(a);
+    const b = document.createElement('b'); b.textContent = r[1]; node.appendChild(b);
+    const c = document.createElement('em'); c.textContent = r[2] || ''; node.appendChild(c);
+  }
+}
+
+function refreshDerived(){
+  const s = readState();
+
+  /* propellant-derived (built-in display + custom editor) */
+  let pv = null;
+  try { pv = propFromState(s); } catch (e){ pv = null; }
+  const pRows = pv ? [
+    [T.d_R, fmtNum(pv.R, 2), 'J/(kg\u00b7K)'],
+    [T.d_cstar, fmtNum(pv.cstar, 1), 'm/s'],
+    [T.d_be, fmtNum(pv.be, 4), '\u2014']
+  ] : [[T.err_prop, '', '']];
+  derivedRows($('propDerived'), pRows);
+  derivedRows($('cpDerived'), pRows);
+
+  /* chamber / geometry */
+  const outerDia = s.chamberDia + 2 * s.wallThk;
+  const totalLen = s.headLen + s.chamberLen + s.nozzleLen;
+  const chamVolCm3 = Math.PI * (s.chamberDia * s.chamberDia) * s.chamberLen / 4 / 1000;
+  const chamMassG = (Math.PI / 4) * (outerDia * outerDia - s.chamberDia * s.chamberDia) * s.chamberLen / 1000 * (isFinite(s.wallDensity) ? s.wallDensity : 0) / 1e3;
+  derivedRows($('chamberDerived'), [
+    [T.d_outerDia, fmtNum(outerDia, 1), 'mm'],
+    [T.d_totalLen, fmtNum(totalLen, 1), 'mm'],
+    [T.d_chamberVol, fmtNum(chamVolCm3, 1), 'cm\u00b3'],
+    [T.d_chamberMass, fmtNum(chamMassG, 1), 'g']
+  ]);
+
+  /* grain */
+  const grainVolCm3 = Math.PI * (s.grainDia * s.grainDia - s.coreDia * s.coreDia) * s.grainLen / 4 / 1000;
+  const dens = (pv ? pv.ro : 0) * s.densityRatio;
+  const grainMassG = grainVolCm3 * dens / 1000;
+  const sumLen = s.grainLen * s.segments;
+  const fill = s.chamberLen > 0 ? 100 * sumLen / s.chamberLen : 0;
+  derivedRows($('grainDerived'), [
+    [T.d_grainVol, fmtNum(grainVolCm3 * s.segments, 1), 'cm\u00b3'],
+    [T.d_grainMass, fmtNum(grainMassG * s.segments, 1), 'g'],
+    [T.d_grainSumLen, fmtNum(sumLen, 1), 'mm'],
+    [T.d_fill, fmtNum(fill, 1), '%'],
+    [T.d_dens, fmtNum(dens, 1), 'kg/m\u00b3']
+  ]);
+
+  /* nozzle */
+  const thA = Math.PI * s.throatDia * s.throatDia / 4;
+  const exA = Math.PI * s.exhaustDia * s.exhaustDia / 4;
+  derivedRows($('nozzleDerived'), [
+    [T.d_throatArea, fmtNum(thA, 1), 'mm\u00b2'],
+    [T.d_exhaustArea, fmtNum(exA, 1), 'mm\u00b2'],
+    [T.d_expansion, thA > 0 ? fmtNum(exA / thA, 2) : '\u2014', '\u2014']
+  ]);
+
+  updateComposition();
+}
+
+/* ==================================================================
+   APP: schematics (SVG)
+   ================================================================== */
+const SVGNS = 'http://www.w3.org/2000/svg';
+const C = {
+  wall:'var(--wall)', wall2:'var(--wall2)', grain:'var(--grain)', grain2:'var(--grain2)',
+  channel:'var(--bg2)', nozzle:'var(--nozzle)', head:'var(--head)', inhib:'var(--inhib)',
+  muted:'var(--muted)', text:'var(--text)', grid:'var(--grid)', accent:'var(--accent)'
+};
+
+function finite(v, d){ return isFinite(v) ? v : (d == null ? 0 : d); }
+function mk(tag, attrs, text){
+  const e = document.createElementNS(SVGNS, tag);
+  if (attrs) for (const k in attrs) if (attrs[k] != null) e.setAttribute(k, attrs[k]);
+  if (text != null) e.textContent = text;
+  return e;
+}
+function svgRoot(host, w, h){
+  const svg = mk('svg', { viewBox: '0 0 ' + w + ' ' + h, preserveAspectRatio: 'xMidYMid meet', role: 'img' });
+  host.appendChild(svg);
+  return svg;
+}
+function pts(arr){ return arr.map(p => p[0].toFixed(2) + ',' + p[1].toFixed(2)).join(' '); }
+
+function dimH(g, x1, x2, y, text, fs){
+  g.appendChild(mk('line', { x1, y1:y, x2, y2:y, stroke:C.muted, 'stroke-width':1.2, opacity:.8 }));
+  g.appendChild(mk('line', { x1, y1:y-5, x2:x1, y2:y+5, stroke:C.muted, 'stroke-width':1.2, opacity:.8 }));
+  g.appendChild(mk('line', { x1:x2, y1:y-5, x2:x2, y2:y+5, stroke:C.muted, 'stroke-width':1.2, opacity:.8 }));
+  g.appendChild(mk('text', { x:(x1+x2)/2, y:y-6, 'text-anchor':'middle', 'font-size':fs, fill:C.text }, text));
+}
+function dimV(g, y1, y2, x, text, fs){
+  g.appendChild(mk('line', { x1:x, y1, x2:x, y2, stroke:C.muted, 'stroke-width':1.2, opacity:.8 }));
+  g.appendChild(mk('line', { x1:x-5, y1, x2:x+5, y2:y1, stroke:C.muted, 'stroke-width':1.2, opacity:.8 }));
+  g.appendChild(mk('line', { x1:x-5, y1:y2, x2:x+5, y2:y2, stroke:C.muted, 'stroke-width':1.2, opacity:.8 }));
+  const my = (y1 + y2) / 2;
+  g.appendChild(mk('text', { x:x-6, y:my, 'text-anchor':'middle', 'font-size':fs, fill:C.text,
+    transform:'rotate(-90 ' + (x-6) + ' ' + my + ')' }, text));
+}
+
+function renderLongitudinal(){
+  const host = $('svgLong'); if (!host) return; clear(host);
+  const s = readState();
+  const headLen = Math.max(0, finite(s.headLen));
+  const chamLen = Math.max(0, finite(s.chamberLen));
+  const nzLen   = Math.max(0, finite(s.nozzleLen));
+  const grnLen  = Math.max(0, finite(s.grainLen));
+  const segs    = Math.max(1, Math.round(finite(s.segments, 1)));
+  const total   = headLen + chamLen + nzLen;
+  const rIn     = Math.max(0.05, finite(s.chamberDia) / 2);
+  const rOut    = rIn + Math.max(0, finite(s.wallThk));
+  const rGrn    = Math.min(Math.max(0, finite(s.grainDia) / 2), rIn);
+  const rCore   = Math.min(Math.max(0, finite(s.coreDia) / 2), rGrn);
+  const rThroat = Math.max(0, finite(s.throatDia) / 2);
+  const rExit   = Math.max(0, finite(s.exhaustDia) / 2);
+  const rBody   = Math.max(rOut, rExit, rThroat, 1e-6);
+  if (!(total > 0) || !(rIn > 0)){ host.innerHTML = '<div class="empty">' + esc(T.sec_longitudinal) + '</div>'; return; }
+
+  const W = 1000, H = 490, cy = 255, cx0 = 110, cx1 = 950;
+  const sx = (cx1 - cx0) / total;
+  const sy = 135 / rBody;
+  const X = x => cx0 + x * sx;
+  const Y = y => cy - y * sy;
+  const svg = svgRoot(host, W, H);
+  const g = mk('g', {}); svg.appendChild(g);
+
+  /* ---- body ---- */
+  g.appendChild(mk('rect', { x:X(0), y:Y(rOut), width:total * sx, height:2 * rOut * sy, fill:C.wall, stroke:C.wall2, 'stroke-width':1.5 }));
+  const nz0 = headLen + chamLen;
+  if (nzLen > 0)
+    g.appendChild(mk('rect', { x:X(nz0), y:Y(rBody), width:nzLen * sx, height:2 * rBody * sy, fill:C.nozzle, stroke:C.wall2, 'stroke-width':1.5 }));
+  /* chamber bore */
+  g.appendChild(mk('rect', { x:X(0), y:Y(rIn), width:(headLen + chamLen) * sx, height:2 * rIn * sy, fill:C.channel }));
+  /* head plug */
+  if (headLen > 0)
+    g.appendChild(mk('rect', { x:X(0), y:Y(rIn), width:headLen * sx, height:2 * rIn * sy, fill:C.head, stroke:C.wall2, 'stroke-width':1 }));
+
+  /* ---- grains ---- */
+  const inset = 0.6;
+  for (let i = 0; i < segs; i++){
+    const x0 = headLen + i * grnLen;
+    if (x0 >= nz0 - 1e-9) break;
+    const x1 = Math.min(x0 + grnLen, nz0);
+    const gx = X(x0) + inset, gw = Math.max(1, (x1 - x0) * sx - 2 * inset);
+    g.appendChild(mk('rect', { x:gx, y:Y(rGrn), width:gw, height:2 * rGrn * sy, fill:C.grain, stroke:C.grain2, 'stroke-width':1 }));
+    if (rCore > 0.01)
+      g.appendChild(mk('rect', { x:gx, y:Y(rCore), width:gw, height:2 * rCore * sy, fill:C.channel }));
+    if (s.insCore && rCore > 0.01){
+      g.appendChild(mk('line', { x1:gx, y1:Y(rCore), x2:gx + gw, y2:Y(rCore), stroke:C.inhib, 'stroke-width':2.5 }));
+      g.appendChild(mk('line', { x1:gx, y1:Y(-rCore), x2:gx + gw, y2:Y(-rCore), stroke:C.inhib, 'stroke-width':2.5 }));
+    }
+    if (s.insOuter){
+      g.appendChild(mk('line', { x1:gx, y1:Y(rGrn), x2:gx + gw, y2:Y(rGrn), stroke:C.inhib, 'stroke-width':2.5 }));
+      g.appendChild(mk('line', { x1:gx, y1:Y(-rGrn), x2:gx + gw, y2:Y(-rGrn), stroke:C.inhib, 'stroke-width':2.5 }));
+    }
+    if (s.insFaces){
+      g.appendChild(mk('line', { x1:gx, y1:Y(rGrn), x2:gx, y2:Y(-rGrn), stroke:C.inhib, 'stroke-width':2.5 }));
+      g.appendChild(mk('line', { x1:gx + gw, y1:Y(rGrn), x2:gx + gw, y2:Y(-rGrn), stroke:C.inhib, 'stroke-width':2.5 }));
+    }
+  }
+
+  /* ---- nozzle channel ---- */
+  if (nzLen > 0){
+    const nzt = nz0 + nzLen * 0.45;
+    g.appendChild(mk('polygon', { fill:C.channel, points:pts([
+      [X(nz0), Y(rIn)], [X(nzt), Y(rThroat)], [X(nz0 + nzLen), Y(rExit)],
+      [X(nz0 + nzLen), Y(-rExit)], [X(nzt), Y(-rThroat)], [X(nz0), Y(-rIn)]
+    ]) }));
+  }
+
+  /* ---- centerline ---- */
+  g.appendChild(mk('line', { x1:X(0) - 14, y1:cy, x2:X(total) + 14, y2:cy, stroke:C.muted, 'stroke-width':1, 'stroke-dasharray':'7 5 2 5', opacity:.45 }));
+
+  /* ---- dimensions ---- */
+  dimV(g, Y(rOut), Y(-rOut), 64, T.ax_outer + ' ' + fmtNum(2 * rOut, 1) + ' mm', 20);
+
+  const oy = 60;
+  g.appendChild(mk('text', { x:(X(0) + X(total)) / 2, y:oy - 26, 'text-anchor':'middle', 'font-size':19, fill:C.muted }, T.ax_total));
+  dimH(g, X(0), X(total), oy, fmtNum(total, 1) + ' mm', 23);
+  g.appendChild(mk('text', { x:cx0, y:oy - 26, 'text-anchor':'start', 'font-size':17, fill:C.muted },
+    segs + ' \u00d7 \u00d8' + fmtNum(finite(s.grainDia), 1) + '/' + fmtNum(finite(s.coreDia), 1) + ' \u00d7 ' + fmtNum(grnLen, 1) + ' mm'));
+
+  const rowY = 436;
+  const seg = [
+    [X(0), X(headLen), T.ax_head, headLen],
+    [X(headLen), X(headLen + chamLen), T.ax_chamber, chamLen],
+    [X(headLen), X(Math.min(headLen + grnLen * segs, nz0)), T.ax_grain, Math.min(grnLen * segs, chamLen)],
+    [X(nz0), X(total), T.ax_nozzle, nzLen]
+  ];
+  for (let i = 0; i < seg.length; i++){
+    const [a, b, title, val] = seg[i];
+    if (!(val > 0)) continue;
+    g.appendChild(mk('line', { x1:a, y1:rowY, x2:b, y2:rowY, stroke:C.muted, 'stroke-width':1.1, opacity:.75 }));
+    g.appendChild(mk('line', { x1:a, y1:rowY - 7, x2:a, y2:rowY + 7, stroke:C.muted, 'stroke-width':1.1, opacity:.75 }));
+    g.appendChild(mk('line', { x1:b, y1:rowY - 7, x2:b, y2:rowY + 7, stroke:C.muted, 'stroke-width':1.1, opacity:.75 }));
+    const ty = (i % 2 === 0) ? rowY - 12 : rowY + 24;
+    g.appendChild(mk('text', { x:(a + b) / 2, y:ty, 'text-anchor':'middle', 'font-size':17, fill:C.muted },
+      title + ' ' + fmtNum(val, 1)));
+  }
+
+  /* throat / exit leaders */
+  if (nzLen > 0){
+    const nzt = nz0 + nzLen * 0.45;
+    const throatTxt = fmtNum(finite(s.throatDia), 1);
+    const exitTxt = fmtNum(finite(s.exhaustDia), 1);
+    g.appendChild(mk('polyline', { points:pts([[X(nzt), Y(rThroat)], [X(nzt) - 26, 112], [X(nzt) - 50, 112]]), fill:'none', stroke:C.muted, 'stroke-width':1.2, opacity:.85 }));
+    g.appendChild(mk('text', { x:X(nzt) - 54, y:116, 'text-anchor':'end', 'font-size':17, fill:C.text }, T.ax_throat + ' ' + throatTxt));
+    g.appendChild(mk('polyline', { points:pts([[X(total), Y(-rExit)], [X(total) - 26, 88], [X(total) - 50, 88]]), fill:'none', stroke:C.muted, 'stroke-width':1.2, opacity:.85 }));
+    g.appendChild(mk('text', { x:X(total) - 54, y:92, 'text-anchor':'end', 'font-size':17, fill:C.text }, T.ax_exhaust + ' ' + exitTxt));
+  }
+}
+
+function renderCross(){
+  const host = $('svgCross'); if (!host) return; clear(host);
+  const s = readState();
+  const rIn   = Math.max(0.05, finite(s.chamberDia) / 2);
+  const rOut  = rIn + Math.max(0, finite(s.wallThk));
+  const rGrn  = Math.min(Math.max(0, finite(s.grainDia) / 2), rIn);
+  const rCore = Math.min(Math.max(0, finite(s.coreDia) / 2), rGrn);
+  const segs  = Math.max(1, Math.round(finite(s.segments, 1)));
+  if (!(rOut > 0)){ host.innerHTML = '<div class="empty">' + esc(T.sec_cross) + '</div>'; return; }
+
+  const W = 1000, H = 490, cx = 430, cy = 250, R = 168;
+  const k = R / rOut;
+  const svg = svgRoot(host, W, H);
+  const g = mk('g', {}); svg.appendChild(g);
+  const ring = (r, fill, extra) => mk('circle', Object.assign({ cx, cy, r:Math.max(0.3, r * k), fill }, extra || {}));
+
+  g.appendChild(ring(rOut, C.wall, { stroke:C.wall2, 'stroke-width':1.5 }));
+  g.appendChild(ring(rIn, C.channel));
+  if (rGrn > 0.01) g.appendChild(ring(rGrn, C.grain, { stroke:C.grain2, 'stroke-width':1 }));
+  if (rCore > 0.01) g.appendChild(ring(rCore, C.channel));
+  if (s.insOuter && rGrn > 0.01) g.appendChild(ring(rGrn, 'none', { stroke:C.inhib, 'stroke-width':3 }));
+  if (s.insCore && rCore > 0.01) g.appendChild(ring(rCore, 'none', { stroke:C.inhib, 'stroke-width':3 }));
+
+  g.appendChild(mk('line', { x1:cx - R - 26, y1:cy, x2:cx + R + 26, y2:cy, stroke:C.muted, 'stroke-width':1, 'stroke-dasharray':'7 5 2 5', opacity:.45 }));
+  g.appendChild(mk('line', { x1:cx, y1:cy - R - 26, x2:cx, y2:cy + R + 26, stroke:C.muted, 'stroke-width':1, 'stroke-dasharray':'7 5 2 5', opacity:.45 }));
+
+  function leader(r, angle, text){
+    const a = angle * Math.PI / 180;
+    const px = cx + r * k * Math.cos(a), py = cy - r * k * Math.sin(a);
+    const mx = cx + (R + 34) * Math.cos(a), my = cy - (R + 34) * Math.sin(a);
+    const ex = cx + (R + 92) * Math.cos(a), ey = cy - (R + 92) * Math.sin(a);
+    g.appendChild(mk('polyline', { points:pts([[px, py], [mx, my], [ex, ey]]), fill:'none', stroke:C.muted, 'stroke-width':1.3, opacity:.85 }));
+    const right = Math.cos(a) >= 0;
+    g.appendChild(mk('text', { x:ex + (right ? 9 : -9), y:ey + 6, 'text-anchor':right ? 'start' : 'end', 'font-size':21, fill:C.text }, text));
+  }
+
+  leader(rOut, 128, T.ax_outer + ': ' + fmtNum(2 * rOut, 1) + ' mm');
+  leader(rIn, 46, T.ax_chamberDia + ': ' + fmtNum(2 * rIn, 1) + ' mm');
+  if (rGrn > 0.01) leader(rGrn, -46, T.ax_grainDia + ': ' + fmtNum(2 * rGrn, 1) + ' mm');
+  if (rCore > 0.01) leader(rCore, -128, T.ax_core + ': ' + fmtNum(2 * rCore, 1) + ' mm');
+
+  g.appendChild(mk('text', { x:cx, y:H - 16, 'text-anchor':'middle', 'font-size':19, fill:C.muted },
+    segs + ' \u00d7 ' + T.ax_seg));
+}
+
+function renderSchematics(){ renderLongitudinal(); renderCross(); }
+
+/* ==================================================================
+   APP: messages & metrics
+   ================================================================== */
+function setMessages(list){
+  const box = $('messages'); if (!box) return; clear(box);
+  for (const m of list || []){
+    const d = document.createElement('div');
+    d.className = 'msg ' + m.kind;
+    d.textContent = m.text;
+    box.appendChild(d);
+  }
+}
+
+function renderMetrics(){
+  const box = $('metrics'); if (!box) return; clear(box);
+  if (!currentResult){ box.innerHTML = '<div class="empty">' + esc(T.sec_results) + '</div>'; return; }
+  const s = currentResult.result.summary;
+  const items = [
+    [T.r_class, s.motorClass, '', true],
+    [T.r_totalImpulse, fmtNum(s.totalImpulse, 1), 'N\u00b7s'],
+    [T.r_maxThrust, fmtNum(s.maxThrust, 1), 'N'],
+    [T.r_avgThrust, fmtNum(s.avgThrust, 1), 'N'],
+    [T.r_maxPressure, fmtNum(s.maxPressure / 1e5, 2), 'bar'],
+    [T.r_burnTime, fmtNum(s.burnTime, 3), 's'],
+    [T.r_isp, fmtNum(s.specificImpulse, 1), 's'],
+    [T.r_maxKn, fmtNum(s.maxKn, 1), ''],
+    [T.r_avgKn, fmtNum(s.avgKn, 1), ''],
+    [T.r_propMass, fmtNum(s.propellantMass * 1000, 1), 'g'],
+    [T.r_initialMass, fmtNum(s.initialMass * 1000, 1), 'g'],
+    [T.r_finalMass, fmtNum(s.finalMass * 1000, 1), 'g'],
+    [T.r_totalTime, fmtNum(s.totalTime, 3), 's'],
+    [T.r_expansion, fmtNum(s.expansion, 2), ''],
+    [T.r_throatDia, fmtNum(currentResult.built.motor.nozzle.throatDiameter * 1000, 2), 'mm']
+  ];
+  for (const it of items){
+    const d = document.createElement('div');
+    d.className = 'metric' + (it[3] ? ' hl' : '');
+    const sp = document.createElement('span'); sp.textContent = it[0];
+    const b = document.createElement('b'); b.textContent = it[1];
+    const em = document.createElement('em'); em.textContent = it[2] || '';
+    d.appendChild(sp); d.appendChild(b); d.appendChild(em);
+    box.appendChild(d);
+  }
+}
+
+/* ==================================================================
+   APP: charts
+   ================================================================== */
+function textW(s, fs){
+  let w = 0;
+  for (const ch of String(s)) w += ch.codePointAt(0) > 0x2e80 ? fs : fs * 0.56;
+  return w;
+}
+function niceCeil(v){
+  if (!(v > 0)) return 1;
+  const e = Math.pow(10, Math.floor(Math.log10(v)));
+  const f = v / e;
+  const n = f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10;
+  return n * e;
+}
+
+function drawChart(host, tip, spec, result){
+  const times = result.times, n = times.length;
+  const W = 520, H = 300, mL = 64, mR = 18, mT = 18, mB = 46;
+  const iw = W - mL - mR, ih = H - mT - mB;
+  let yMax = 0;
+  for (const s of spec.series) for (const v of s.data) if (isFinite(v) && v > yMax) yMax = v;
+  yMax = niceCeil(yMax * 1.05) || 1;
+  const xMax = times[n - 1] || 1;
+  const X = i => mL + (times[i] / xMax) * iw;
+  const Y = v => mT + ih - (v / yMax) * ih;
+
+  const svg = mk('svg', { viewBox:'0 0 ' + W + ' ' + H, class:'chart-svg' });
+  const g = mk('g', {}); svg.appendChild(g);
+
+  const divs = 5;
+  for (let i = 0; i <= divs; i++){
+    const y = mT + ih - (i / divs) * ih;
+    g.appendChild(mk('line', { x1:mL, y1:y, x2:mL + iw, y2:y, stroke:C.grid, 'stroke-width':1 }));
+    g.appendChild(mk('text', { x:mL - 8, y:y + 5, 'text-anchor':'end', 'font-size':16, fill:C.muted }, spec.yFmt(i / divs * yMax)));
+  }
+  const xt = Math.min(6, n - 1);
+  for (let i = 0; i <= xt; i++){
+    const idx = Math.round(i / xt * (n - 1)), x = X(idx);
+    g.appendChild(mk('line', { x1:x, y1:mT + ih, x2:x, y2:mT + ih + 5, stroke:C.muted, 'stroke-width':1 }));
+    g.appendChild(mk('text', { x, y:mT + ih + 24, 'text-anchor':'middle', 'font-size':16, fill:C.muted },
+      fmtNum(times[idx], times[idx] < 1 ? 2 : 1)));
+  }
+  g.appendChild(mk('line', { x1:mL, y1:mT, x2:mL, y2:mT + ih, stroke:C.muted, 'stroke-width':1.2 }));
+  g.appendChild(mk('line', { x1:mL, y1:mT + ih, x2:mL + iw, y2:mT + ih, stroke:C.muted, 'stroke-width':1.2 }));
+  g.appendChild(mk('text', { x:mL + iw / 2, y:H - 8, 'text-anchor':'middle', 'font-size':17, fill:C.muted }, T.ax_t + ', s'));
+  g.appendChild(mk('text', { x:16, y:mT + ih / 2, 'text-anchor':'middle', 'font-size':17, fill:C.muted,
+    transform:'rotate(-90 16 ' + (mT + ih / 2) + ')' }, spec.ylab));
+
+  const idxs = Core.decimateIdx(n, 500);
+  for (let si = 0; si < spec.series.length; si++){
+    const s = spec.series[si], p = [];
+    for (const i of idxs) p.push([X(i), Y(s.data[i])]);
+    if (si === 0){
+      const area = [[X(idxs[0]), mT + ih]].concat(p).concat([[X(idxs[idxs.length - 1]), mT + ih]]);
+      g.appendChild(mk('polygon', { points:pts(area), fill:s.color, opacity:.13 }));
+    }
+    g.appendChild(mk('polyline', { points:pts(p), fill:'none', stroke:s.color, 'stroke-width':2, 'stroke-linejoin':'round' }));
+  }
+
+  if (spec.series.length > 1){
+    let lx = mL + 8;
+    const ly = mT + 14;
+    for (const s of spec.series){
+      g.appendChild(mk('rect', { x:lx, y:ly - 10, width:12, height:12, rx:3, fill:s.color }));
+      g.appendChild(mk('text', { x:lx + 18, y:ly, 'font-size':15, fill:C.muted }, s.name));
+      lx += 18 + textW(s.name, 15) + 16;
+    }
+  }
+
+  const hover = mk('g', { style:'display:none' });
+  svg.appendChild(hover);
+  const vline = mk('line', { y1:mT, y2:mT + ih, stroke:C.accent, 'stroke-width':1, 'stroke-dasharray':'4 3', opacity:.85 });
+  hover.appendChild(vline);
+  const dots = spec.series.map(s => {
+    const d = mk('circle', { r:4, fill:s.color, stroke:'var(--panel)', 'stroke-width':2 });
+    hover.appendChild(d); return d;
+  });
+
+  svg.addEventListener('mousemove', ev => {
+    const rect = svg.getBoundingClientRect();
+    if (!rect.width || n < 2) return;
+    const relX = (ev.clientX - rect.left) / rect.width * W;
+    const tt = Math.max(times[0], Math.min(times[n - 1], (relX - mL) / iw * xMax));
+    let i = Math.round(tt / (times[1] - times[0] || 1));
+    i = Math.max(0, Math.min(n - 1, i));
+    const x = X(i);
+    vline.setAttribute('x1', x); vline.setAttribute('x2', x);
+    for (let k = 0; k < dots.length; k++){
+      dots[k].setAttribute('cx', x);
+      dots[k].setAttribute('cy', Y(spec.series[k].data[i]));
+    }
+    hover.style.display = '';
+    let html = '<b>t = ' + fmtNum(times[i], 3) + ' s</b>';
+    for (const s of spec.series) html += '<br>' + esc(s.name) + ': ' + esc(s.fmt(s.data[i]));
+    tip.innerHTML = html;
+    tip.style.display = '';
+    tip.style.left = (x / W * 100) + '%';
+    tip.style.top = ((ev.clientY - rect.top) / rect.height * 100) + '%';
+  });
+  svg.addEventListener('mouseleave', () => { hover.style.display = 'none'; tip.style.display = 'none'; });
+
+  host.insertBefore(svg, tip);
+}
+
+function renderCharts(){
+  const box = $('charts'); if (!box) return; clear(box);
+  if (!currentResult){ box.innerHTML = '<div class="empty">' + esc(T.sec_charts) + '</div>'; return; }
+  const r = currentResult.result;
+  const m = currentResult.built.motor;
+  const dens = m.grains[0].density;
+  const constMass = m.nozzle.mass + m.headMass + m.chamberMass();
+  const propMass = r.propVolumes.map(v => v * dens);
+  const totalMass = propMass.map(v => v + constMass);
+
+  const specs = [
+    { title:T.c_thrust, ylab:'N', yFmt:v => fmtNum(v, 0),
+      series:[{ name:T.ax_thrust, color:'var(--c1)', data:r.thrusts, fmt:v => fmtNum(v, 1) + ' N' }] },
+    { title:T.c_pressure, ylab:'bar', yFmt:v => fmtNum(v, 0),
+      series:[{ name:T.ax_pressure, color:'var(--c2)', data:r.pressures.map(v => v / 1e5), fmt:v => fmtNum(v, 2) + ' bar' }] },
+    { title:T.c_kn, ylab:'Kn', yFmt:v => fmtNum(v, 0),
+      series:[{ name:T.ax_kn, color:'var(--c3)', data:r.kns, fmt:v => fmtNum(v, 1) }] },
+    { title:T.c_mass, ylab:'kg', yFmt:v => fmtNum(v, 2),
+      series:[
+        { name:T.r_propMass, color:'var(--c4)', data:propMass, fmt:v => fmtNum(v * 1000, 1) + ' g' },
+        { name:T.r_initialMass, color:'var(--c1)', data:totalMass, fmt:v => fmtNum(v * 1000, 1) + ' g' }
+      ] }
+  ];
+
+  for (const sp of specs){
+    const wrap = document.createElement('div'); wrap.className = 'chart';
+    const h = document.createElement('h3'); h.textContent = sp.title; wrap.appendChild(h);
+    const host = document.createElement('div'); host.className = 'chart-host'; wrap.appendChild(host);
+    const tip = document.createElement('div'); tip.className = 'tip'; tip.style.display = 'none'; host.appendChild(tip);
+    box.appendChild(wrap);
+    drawChart(host, tip, sp, r);
+  }
+}
+
+/* ==================================================================
+   APP: compute pipeline
+   ================================================================== */
+let computeTimer = null;
+
+function refresh(){
+  refreshDerived();
+  renderSchematics();
+}
+
+function compute(){
+  const s = readState();
+  saveProject(s);
+  let out;
+  try {
+    out = runSimulation(s);
+  } catch (e){
+    currentResult = null;
+    renderMetrics(); renderCharts();
+    const text = (e && e.key)
+      ? ((T[e.key] || T.err_generic) + (e.detail || ''))
+      : (T.err_generic + (e && e.message ? e.message : ''));
+    setMessages([{ kind:'err', text }]);
+    return;
+  }
+  currentResult = { built:out.built, result:out.result, state:s };
+  const msgs = [];
+  for (const w of out.built.warnings) msgs.push({ kind:'warn', text:T[w] || w });
+  msgs.push({ kind:'ok', text:T.msg_ok });
+  setMessages(msgs);
+  renderMetrics();
+  renderCharts();
+}
+
+function onInput(){
+  refresh();
+  if (computeTimer) clearTimeout(computeTimer);
+  computeTimer = setTimeout(() => { computeTimer = null; compute(); }, 180);
+}
+
+/* ==================================================================
+   APP: export
+   ================================================================== */
+function sanitizeTag(s, fallback){
+  const t = String(s == null ? '' : s).trim().replace(/\s+/g, '_');
+  return t || fallback;
+}
+function download(filename, text, mime){
+  const blob = new Blob([text], { type: mime || 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+}
+function needResult(){
+  if (currentResult) return true;
+  setMessages([{ kind:'warn', text:T.sec_results + ' \u2014 ' + T.btn_compute }]);
+  return false;
+}
+
+function buildEng(){
+  const cr = currentResult; if (!cr) return null;
+  const s = cr.state, sum = cr.result.summary;
+  const name = sanitizeTag(s.motorName, 'Motor');
+  const dia = (s.chamberDia + 2 * s.wallThk).toFixed(1);
+  const len = (s.headLen + s.chamberLen + s.nozzleLen).toFixed(1);
+  const out = [];
+  out.push('; RASP (.eng) motor file \u2014 generated by SRM Calculator');
+  out.push('; ' + name + ' / ' + sanitizeTag(s.manufacturer, 'Custom'));
+  out.push([ name, dia, len, '0', sum.propellantMass.toFixed(4), sum.initialMass.toFixed(4),
+             sanitizeTag(s.manufacturer, 'Custom') ].join(' '));
+  for (let i = 0; i < cr.result.times.length; i++)
+    out.push(cr.result.times[i].toFixed(4) + ' ' + cr.result.thrusts[i].toFixed(4));
+  return out.join('\n') + '\n';
+}
+
+function buildRse(){
+  const cr = currentResult; if (!cr) return null;
+  const s = cr.state, sum = cr.result.summary, r = cr.result;
+  const dens = cr.built.motor.grains[0].density;
+  const outerDia = s.chamberDia + 2 * s.wallThk;
+  const totalLen = s.headLen + s.chamberLen + s.nozzleLen;
+  const attr = {
+    FDiv:'10', FFix:'1', FStep:'-1.',
+    Isp: sum.specificImpulse.toFixed(1),
+    Itot: sum.totalImpulse.toFixed(2),
+    Type:'single-use',
+    'auto-calc-cg':'1', 'auto-calc-mass':'1',
+    avgThrust: sum.avgThrust.toFixed(2),
+    'burn-time': sum.burnTime.toFixed(3),
+    cgDiv:'10', cgFix:'1', cgStep:'-1.',
+    code: sanitizeTag(s.motorName, 'Motor'),
+    delays:'0',
+    dia: outerDia.toFixed(1),
+    exitDia: finite(s.exhaustDia).toFixed(1),
+    initWt: (sum.initialMass * 1000).toFixed(2),
+    len: totalLen.toFixed(1),
+    mDiv:'10', mFix:'1', mStep:'-1.',
+    massFrac: (sum.propellantMass / sum.initialMass * 100).toFixed(2),
+    mfg: sanitizeTag(s.manufacturer, 'Custom'),
+    peakThrust: sum.maxThrust.toFixed(2),
+    propWt: (sum.propellantMass * 1000).toFixed(2),
+    tDiv:'10', tFix:'1', tStep:'-1.',
+    throatDia: finite(s.throatDia).toFixed(1)
+  };
+  let xml = '<engine-database>\n <engine-list>\n  <engine';
+  for (const k in attr) xml += ' ' + k + '="' + esc(attr[k]) + '"';
+  xml += '>\n   <comments>' + esc('Generated by SRM Calculator \u2014 ' + (s.motorName || 'Motor')) + '</comments>\n   <data>\n';
+  const idx = Core.decimateIdx(r.times.length, 400);
+  for (const i of idx){
+    const pm = r.propVolumes[i] * dens * 1000;
+    xml += '    <eng-data cg="0." f="' + r.thrusts[i].toFixed(4) + '" m="' + pm.toFixed(4) +
+           '" t="' + r.times[i].toFixed(4) + '"/>\n';
+  }
+  xml += '   </data>\n  </engine>\n </engine-list>\n</engine-database>\n';
+  return xml;
+}
+
+function buildCsv(){
+  const cr = currentResult; if (!cr) return null;
+  const r = cr.result, m = cr.built.motor, dens = m.grains[0].density;
+  const constMass = m.nozzle.mass + m.headMass + m.chamberMass();
+  const rows = ['time_s,pressure_Pa,pressure_bar,thrust_N,Kn,propellant_mass_g,motor_mass_g,throat_dia_mm'];
+  for (let i = 0; i < r.times.length; i++){
+    const pm = r.propVolumes[i] * dens;
+    const thDia = r.throatAreas[i] > 0 ? Math.sqrt(4 * r.throatAreas[i] / Math.PI) * 1000 : 0;
+    rows.push([
+      r.times[i].toFixed(4), r.pressures[i].toFixed(2), (r.pressures[i] / 1e5).toFixed(4),
+      r.thrusts[i].toFixed(4), r.kns[i].toFixed(4), (pm * 1000).toFixed(3),
+      ((pm + constMass) * 1000).toFixed(3), thDia.toFixed(4)
+    ].join(','));
+  }
+  return rows.join('\n') + '\n';
+}
+
+function buildProjectJson(){
+  const cr = currentResult;
+  const s = cr ? cr.state : readState();
+  const doc = {
+    app: 'SRM Calculator', version: 2, generated: new Date().toISOString(),
+    state: s
+  };
+  if (cr){
+    doc.summary = cr.result.summary;
+    doc.curves = {
+      time: cr.result.times,
+      thrust: cr.result.thrusts,
+      pressure: cr.result.pressures,
+      kn: cr.result.kns,
+      propellantVolume: cr.result.propVolumes,
+      throatArea: cr.result.throatAreas
+    };
+  }
+  return JSON.stringify(doc, null, 1);
+}
+
+/* ==================================================================
+   APP: persistence & propellant UI
+   ================================================================== */
+function saveProject(s){
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s || readState())); } catch (e){ /* ignore */ }
+}
+function loadProject(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e){ return null; }
+}
+
+function rebuildPropSelect(current){
+  const sel = $('propSelect'); if (!sel) return;
+  const keep = (current != null) ? current : sel.value;
+  clear(sel);
+  const addOpt = (v, label) => {
+    const o = document.createElement('option');
+    o.value = v; o.textContent = label; sel.appendChild(o);
+  };
+  for (const k of Object.keys(Core.STANDARD_PROPELLANTS)) addOpt(k, k);
+  for (const k of Object.keys(customProps)) addOpt(k, k + ' *');
+  addOpt('__new__', T.btn_newPropellant + '\u2026');
+  const values = Array.from(sel.options).map(o => o.value);
+  sel.value = values.indexOf(keep) >= 0 ? keep : Object.keys(Core.STANDARD_PROPELLANTS)[0];
+  syncPropUI();
+}
+
+function syncPropUI(){
+  const ed = $('cpEditor');
+  const sel = $('propSelect');
+  if (ed && sel) ed.classList.toggle('show', sel.value === '__new__');
+  updateComposition();
+  syncPanel();
+}
+
+function registerCustom(){
+  const sel = $('propSelect');
+  if (!sel || sel.value !== '__new__') return;
+  const name = ($('cpName').value || '').trim();
+  if (!name) return;
+  customProps[name] = {
+    name, M:numVal('cpM'), ro:numVal('cpRo'), k:numVal('cpK'), k2ph:numVal('cpK2ph'),
+    T0:numVal('cpT0'), T:numVal('cpT'), a:numVal('cpA'), n:numVal('cpN')
+  };
+  rebuildPropSelect('__new__');
+}
+
+/* ==================================================================
+   APP: language, theme, events, init
+   ================================================================== */
+function applyI18n(){
+  document.documentElement.lang = LANG === 'zh' ? 'zh-CN' : LANG;
+  qsa('[data-i18n]').forEach(el => {
+    const k = el.getAttribute('data-i18n');
+    if (T[k] != null) el.textContent = T[k];
+  });
+  document.title = T.appTitle + ' \u2014 ' + T.appSubtitle;
+}
+function setLang(lang, rerender){
+  LANG = I18N[lang] ? lang : 'en';
+  T = I18N[LANG];
+  const sel = $('langSel'); if (sel) sel.value = LANG;
+  applyI18n();
+  rebuildPropSelect();
+  if (rerender) onInput();
+}
+function setTheme(theme, rerender){
+  const t = theme === 'light' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', t);
+  const b = $('themeBtn');
+  if (b) b.textContent = t === 'light' ? '\u2600\ufe0f' : '\ud83c\udf19';
+  if (rerender){ refresh(); if (currentResult) renderCharts(); }
+}
+function detectLang(){
+  const l = (navigator.language || 'en').toLowerCase();
+  if (l.indexOf('ru') === 0) return 'ru';
+  if (l.indexOf('zh') === 0) return 'zh';
+  return 'en';
+}
+
+function wire(){
+  for (const id in FIELD_IDS){
+    const e = $(id); if (!e) continue;
+    e.addEventListener('input', onInput);
+  }
+  for (const id of ['insOuter', 'insFaces', 'insCore'])
+    $(id).addEventListener('change', onInput);
+
+  for (const id of ['cpName', 'cpM', 'cpRo', 'cpK', 'cpK2ph', 'cpT0', 'cpT', 'cpA', 'cpN'])
+    $(id).addEventListener('input', () => { registerCustom(); onInput(); });
+
+  $('propSelect').addEventListener('change', () => {
+    const v = $('propSelect').value;
+    if (customProps[v]){
+      const p = customProps[v];
+      setInput('cpName', v); setInput('cpM', p.M); setInput('cpRo', p.ro);
+      setInput('cpK', p.k); setInput('cpK2ph', p.k2ph); setInput('cpT0', p.T0);
+      setInput('cpT', p.T); setInput('cpA', p.a); setInput('cpN', p.n);
+    }
+    syncPropUI();
+    onInput();
+  });
+
+  $('newPropBtn').addEventListener('click', () => {
+    $('propSelect').value = '__new__';
+    if (!($('cpName').value || '').trim()) setInput('cpName', 'CUSTOM-1');
+    syncPropUI();
+    refresh(); $('cpName').focus();
+  });
+
+  $('delPropBtn').addEventListener('click', () => {
+    const name = ($('cpName').value || '').trim();
+    if (name && customProps[name]) delete customProps[name];
+    rebuildPropSelect('__new__');
+    onInput();
+  });
+
+  $('computeBtn').addEventListener('click', () => {
+    if (computeTimer){ clearTimeout(computeTimer); computeTimer = null; }
+    refresh(); compute();
+  });
+
+  $('langSel').addEventListener('change', () => setLang($('langSel').value, true));
+  $('themeBtn').addEventListener('click', () => {
+    const cur = document.documentElement.getAttribute('data-theme');
+    setTheme(cur === 'light' ? 'dark' : 'light', true);
+    saveProject();
+  });
+
+  $('btnEng').addEventListener('click', () => { if (needResult()) download(sanitizeTag(readState().motorName, 'motor') + '.eng', buildEng()); });
+  $('btnRse').addEventListener('click', () => { if (needResult()) download(sanitizeTag(readState().motorName, 'motor') + '.rse', buildRse()); });
+  $('btnCsv').addEventListener('click', () => { if (needResult()) download(sanitizeTag(readState().motorName, 'motor') + '.csv', buildCsv()); });
+  $('btnJson').addEventListener('click', () => download(sanitizeTag(readState().motorName, 'motor') + '.json', buildProjectJson(), 'application/json;charset=utf-8'));
+  $('btnSave').addEventListener('click', () => { saveProject(); download(sanitizeTag(readState().motorName, 'motor') + '.json', buildProjectJson(), 'application/json;charset=utf-8'); });
+
+  $('fileLoad').addEventListener('change', ev => {
+    const f = ev.target.files && ev.target.files[0];
+    if (!f) return;
+    const rd = new FileReader();
+    rd.onload = () => {
+      try {
+        const doc = JSON.parse(String(rd.result));
+        writeState(doc.state || doc);
+        refresh(); compute();
+      } catch (e){
+        setMessages([{ kind:'err', text:T.err_generic + (e && e.message ? e.message : '') }]);
+      }
+    };
+    rd.readAsText(f);
+    ev.target.value = '';
+  });
+
+  $('btnReset').addEventListener('click', () => {
+    try { localStorage.removeItem(STORAGE_KEY); } catch (e){ /* ignore */ }
+    writeState(JSON.parse(JSON.stringify(DEFAULT_STATE)));
+    refresh(); compute();
+  });
+}
+
+/* Keep the input panel reachable at any page zoom / viewport size:
+   it sticks next to the results while it fits, otherwise it flows with
+   the page so no input field is ever clipped behind an inner scroll area. */
+function syncPanel(){
+  const panel = $('panel'), bar = document.querySelector('.topbar');
+  if (!panel) return;
+  const barH = bar ? Math.round(bar.getBoundingClientRect().height) : 78;
+  document.documentElement.style.setProperty('--bar-h', barH + 'px');
+  if (window.matchMedia('(max-width:1050px)').matches){ panel.classList.add('flow'); return; }
+  panel.classList.remove('flow');
+  const avail = window.innerHeight - barH - 16;
+  if (panel.scrollHeight > avail + 2) panel.classList.add('flow');
+}
+
+function init(){
+  const saved = loadProject();
+  writeState(saved || DEFAULT_STATE);
+  if (!saved) setLang(detectLang(), false);
+  wire();
+  syncPropUI();
+  refresh();
+  compute();
+  syncPanel();
+  window.addEventListener('resize', syncPanel);
+  window.addEventListener('orientationchange', syncPanel);
+  qsa('#panel details').forEach(d => d.addEventListener('toggle', syncPanel));
+}
+
+init();
+})();
+</script>
+</body>
+</html>
